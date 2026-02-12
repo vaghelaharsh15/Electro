@@ -157,7 +157,7 @@ def remove_from_cart(request):
         cart.pop(index)
         request.session.modified = True
     return redirect('cart')
-
+# new
 def cart(request):
     cart_items = _get_cart(request)
     # Only process dict items (ignore corrupted/old session data)
