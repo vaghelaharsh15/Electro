@@ -96,7 +96,7 @@
                                     </div>
                                     <div>
                                         <h4>Address</h4>
-                                        <p class="mb-2">123 Street New York.USA</p>
+                                        <p class="mb-2">{{contacts.address}}</p>
                                     </div>
                                 </div>
                             </div>
@@ -108,7 +108,7 @@
                                     </div>
                                     <div>
                                         <h4>Mail Us</h4>
-                                        <p class="mb-2">info@example.com</p>
+                                        <p class="mb-2">{{contacts.contact_email}}</p>
                                     </div>
                                 </div>
                             </div>
@@ -120,7 +120,7 @@
                                     </div>
                                     <div>
                                         <h4>Telephone</h4>
-                                        <p class="mb-2">(+012) 3456 7890</p>
+                                        <p class="mb-2">(+{{contacts.code}})   {{ contacts.contact_number|slice:":3" }} {{ contacts.contact_number|slice:"3:6" }} {{ contacts.contact_number|slice:"6:" }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -131,8 +131,8 @@
                                         <i class="fab fa-firefox-browser fa-2x text-primary"></i>
                                     </div>
                                     <div>
-                                        <h4>Yoursite@ex.com</h4>
-                                        <p class="mb-2">(+012) 3456 7890</p>
+                                        <h4>Electro@ex.com</h4>
+                                        <p class="mb-2">(+{{contacts.code}})   {{ contacts.contact_number|slice:":3" }} {{ contacts.contact_number|slice:"3:6" }} {{ contacts.contact_number|slice:"6:" }}</p>
                                     </div>
                                 </div>
                             </div>

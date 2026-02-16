@@ -21,7 +21,7 @@ def _parse_decimal(value: str | None):
 
 def _filtered_products_context(request):
     products = Product.objects.all()
-
+    contacts=Contact.objects.first()
     category_ids = request.GET.getlist("category")
     category_param = request.GET.get("category") or request.GET.get("category_name")
     color_param = request.GET.get("color") or request.GET.get("color_name")
@@ -70,6 +70,7 @@ def _filtered_products_context(request):
         "selected_color": color_param or "",
         "min_price": "" if min_price is None else str(min_price),
         "max_price": "" if max_price is None else str(max_price),
+        "contacts":contacts
     }
 
 def product_list(request):
@@ -85,19 +86,28 @@ def product_list(request):
 
 # Create your views here.
 def index(request):
+    contacts = Contact.objects.first()
     products = Product.objects.all()
+    new_arrivals_products = Product.objects.all().order_by('-date')
     categories = Category.objects.annotate(count=Count("product"))
-    return render(request, "index.html", {"products": products, "categories": categories})
+    return render(request, "index.html", {
+        "contacts": contacts,
+        "products": products,
+        "new_arrivals_products": new_arrivals_products,
+        "categories": categories,
+    })
     # return render(request,"index.html")
 
 def shop(request):
-    context = _filtered_products_context(request)
-    return render(request, "shop.html", context)
+    context= _filtered_products_context(request)
+    return render(request, "shop.html",context)
 def single(request):
-    return render(request,"single.html")
+    contacts=Contact.objects.first()
+    return render(request,"single.html",{"contacts":contacts})
 
 def bestseller(request):
-    return render(request,"bestseller.html")
+    contacts=Contact.objects.first()
+    return render(request,"bestseller.html",{"contacts":contacts})
 
 def _get_cart(request):
     """Get cart from session (list of dicts: name, model, price, quantity)."""
@@ -157,8 +167,9 @@ def remove_from_cart(request):
         cart.pop(index)
         request.session.modified = True
     return redirect('cart')
-# new
+
 def cart(request):
+    contacts=Contact.objects.first()
     cart_items = _get_cart(request)
     # Only process dict items (ignore corrupted/old session data)
     valid_items = [item for item in cart_items if isinstance(item, dict)]
@@ -166,18 +177,22 @@ def cart(request):
         item['total'] = item.get('price', 0) * item.get('quantity', 0)
     cart_total = sum(item['total'] for item in valid_items)
     return render(request, "cart.html", {
+        "contacts":contacts,
         'cart_items': valid_items,
         'cart_total': cart_total,
     })
 
 def cheackout(request):
-    return render(request,"cheackout.html")
+    contacts=Contact.objects.first()
+    return render(request,"cheackout.html",{"contacts":contacts})
 
 def error(request):
-    return render(request,"404.html")
+    contacts=Contact.objects.first()
+    return render(request,"404.html",{"contacts":contacts})
 
 def contact(request):
-    return render(request,"contact.html")
+    contacts=Contact.objects.first()
+    return render(request,"contact.html",{"contacts":contacts})
 
 
 def register(request):
