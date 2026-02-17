@@ -5,6 +5,9 @@ from django.db.models import Count
 from django.db.models import Q
 from decimal import Decimal, InvalidOperation
 from django.contrib.auth.hashers import make_password, check_password
+from django.db.models.functions import Random
+from django.core.paginator import Paginator
+
 
 
 def _parse_decimal(value: str | None):
@@ -59,7 +62,18 @@ def _filtered_products_context(request):
 
     categories = Category.objects.annotate(count=Count("product"))
     colors = Color.objects.annotate(count=Count("product"))
-
+    paginator = Paginator(products, 15)
+    page_number = request.GET.get("page",1)
+    try:
+        page_number = int(page_number)
+    except ValueError:
+        page_number = 1 
+    products = paginator.get_page(page_number)
+    show_page=paginator.get_elided_page_range(page_number,on_each_side=1,on_ends=1)
+    get_copy = request.GET.copy()
+    if "page" in get_copy:
+        del get_copy["page"]
+    query_string = get_copy.urlencode()
     return {
         "products": products,
         "pid": products,  # template expects `pid`
@@ -70,7 +84,9 @@ def _filtered_products_context(request):
         "selected_color": color_param or "",
         "min_price": "" if min_price is None else str(min_price),
         "max_price": "" if max_price is None else str(max_price),
-        "contacts":contacts
+        "contacts":contacts,
+        "show_page":show_page,
+        "query_string": query_string,
     }
 
 def product_list(request):
@@ -90,11 +106,20 @@ def index(request):
     products = Product.objects.all()
     new_arrivals_products = Product.objects.all().order_by('-date')
     categories = Category.objects.annotate(count=Count("product"))
+    paginator = Paginator(products,12)
+    page_number = request.GET.get("page",1)
+    try:
+        page_number = int(page_number)
+    except ValueError:
+        page_number = 1 
+    products = paginator.get_page(page_number)
+    show_page=paginator.get_elided_page_range(page_number,on_each_side=1,on_ends=1)
     return render(request, "index.html", {
-        "contacts": contacts,
-        "products": products,
-        "new_arrivals_products": new_arrivals_products,
-        "categories": categories,
+    "contacts": contacts,
+    "products": products,
+    "new_arrivals_products": new_arrivals_products,
+    "categories": categories,
+    "show_page":show_page
     })
     # return render(request,"index.html")
 
@@ -102,12 +127,21 @@ def shop(request):
     context= _filtered_products_context(request)
     return render(request, "shop.html",context)
 def single(request):
+    categories = Category.objects.annotate(count=Count("product"))
     contacts=Contact.objects.first()
-    return render(request,"single.html",{"contacts":contacts})
+    return render(request,"single.html",{"contacts":contacts,"categories":categories})
 
 def bestseller(request):
+    products=Product.objects.order_by(Random())
     contacts=Contact.objects.first()
-    return render(request,"bestseller.html",{"contacts":contacts})
+    categories = Category.objects.annotate(count=Count("product"))
+    new_arrivals_products = Product.objects.order_by('-date')
+    return render(request,"bestseller.html",{
+        "contacts":contacts,
+        "products":products,
+        "categories":categories,
+        "new_arrival_products":new_arrivals_products
+        })
 
 def _get_cart(request):
     """Get cart from session (list of dicts: name, model, price, quantity)."""
@@ -169,6 +203,7 @@ def remove_from_cart(request):
     return redirect('cart')
 
 def cart(request):
+    categories = Category.objects.annotate(count=Count("product"))
     contacts=Contact.objects.first()
     cart_items = _get_cart(request)
     # Only process dict items (ignore corrupted/old session data)
@@ -180,19 +215,23 @@ def cart(request):
         "contacts":contacts,
         'cart_items': valid_items,
         'cart_total': cart_total,
+        "categories":categories
     })
 
 def cheackout(request):
     contacts=Contact.objects.first()
-    return render(request,"cheackout.html",{"contacts":contacts})
+    categories = Category.objects.annotate(count=Count("product"))
+    return render(request,"cheackout.html",{"contacts":contacts,"categories":categories})
 
 def error(request):
     contacts=Contact.objects.first()
-    return render(request,"404.html",{"contacts":contacts})
+    categories = Category.objects.annotate(count=Count("product"))
+    return render(request,"404.html",{"contacts":contacts,"categories":categories})
 
 def contact(request):
     contacts=Contact.objects.first()
-    return render(request,"contact.html",{"contacts":contacts})
+    categories = Category.objects.annotate(count=Count("product"))
+    return render(request,"contact.html",{"contacts":contacts,"categories":categories})
 
 
 def register(request):
