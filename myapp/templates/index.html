@@ -140,10 +140,22 @@
                             class="rounded-circle btn-md-square border"><i class="fas fa-random"></i></i></a>
                     <a href="#" class="text-muted d-flex align-items-center justify-content-center me-3"><span
                             class="rounded-circle btn-md-square border"><i class="fas fa-heart"></i></a>
-                    <a href="#" class="text-muted d-flex align-items-center justify-content-center me-3"><span
+                    <a href="{% url 'cart' %}" class="text-muted d-flex align-items-center justify-content-center me-3"><span
                             class="rounded-circle btn-md-square border"><i class="fas fa-shopping-cart"></i></a>
-                    <a href="#" class="text-muted d-flex align-items-center justify-content-center"><span
-                        class="rounded-circle btn-md-square border"><i class="fa-solid fa-circle-user"></i></a>
+                    <div class="dropdown">
+                        <a href="#" class="text-muted d-flex align-items-center justify-content-center dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><span class="rounded-circle btn-md-square border"><i class="fa-solid fa-circle-user"></i></span></a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            {% if request.session.user_id %}
+                            <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="fas fa-user me-2"></i>Profile</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                            {% else %}
+                            <li><a class="dropdown-item" href="{% url 'register' %}"><i class="fas fa-user-plus me-2"></i>Sign Up</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'login' %}"><i class="fas fa-sign-in-alt me-2"></i>Login</a></li>
+                            {% endif %}
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>

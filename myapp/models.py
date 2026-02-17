@@ -9,6 +9,7 @@ class AppUser(models.Model):
     email = models.EmailField(unique=True)
     phoneno = models.CharField(max_length=20, unique=True)
     password = models.CharField(max_length=128)  # stores hashed password
+    profile_image = models.ImageField(upload_to="profile_pics", null=True, blank=True)
 
     def __str__(self):
         return self.name

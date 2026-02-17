@@ -248,3 +248,38 @@ def logout(request):
     return redirect('index')
 
 
+def profile(request):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return redirect('login')
+    try:
+        user = AppUser.objects.get(id=user_id)
+    except AppUser.DoesNotExist:
+        request.session.pop('user_id', None)
+        request.session.pop('user_name', None)
+        return redirect('login')
+    error = None
+    success = None
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        email = request.POST.get('email', '').strip()
+        phoneno = request.POST.get('phoneno', '').strip()
+        profile_image = request.FILES.get('profile_image')
+        if not name or not email or not phoneno:
+            error = "Name, email and phone are required."
+        elif AppUser.objects.filter(email=email).exclude(id=user.id).exists():
+            error = "Email already in use."
+        elif AppUser.objects.filter(phoneno=phoneno).exclude(id=user.id).exists():
+            error = "Phone number already in use."
+        else:
+            user.name = name
+            user.email = email
+            user.phoneno = phoneno
+            if profile_image:
+                user.profile_image = profile_image
+            user.save()
+            request.session['user_name'] = user.name
+            success = "Profile updated successfully."
+    return render(request, "profile.html", {"user": user, "error": error, "success": success})
+
+
