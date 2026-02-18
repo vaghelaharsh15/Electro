@@ -62,7 +62,7 @@ def _filtered_products_context(request):
 
     categories = Category.objects.annotate(count=Count("product"))
     colors = Color.objects.annotate(count=Count("product"))
-    paginator = Paginator(products, 15)
+    paginator = Paginator(products, 12)
     page_number = request.GET.get("page",1)
     try:
         page_number = int(page_number)
@@ -132,16 +132,16 @@ def single(request):
     return render(request,"single.html",{"contacts":contacts,"categories":categories})
 
 def bestseller(request):
-    products=Product.objects.order_by(Random())
-    contacts=Contact.objects.first()
+    products = Product.objects.order_by(Random())
+    contacts = Contact.objects.first()
     categories = Category.objects.annotate(count=Count("product"))
-    new_arrivals_products = Product.objects.order_by('-date')
-    return render(request,"bestseller.html",{
-        "contacts":contacts,
-        "products":products,
-        "categories":categories,
-        "new_arrival_products":new_arrivals_products
-        })
+    new_arrivals_products = Product.objects.order_by('-date')[:8]
+    return render(request, "bestseller.html", {
+        "contacts": contacts,
+        "products": products,
+        "categories": categories,
+        "new_arrivals_products": new_arrivals_products,
+    })
 
 def _get_cart(request):
     """Get cart from session (list of dicts: name, model, price, quantity)."""
