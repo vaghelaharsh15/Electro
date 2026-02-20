@@ -7,6 +7,8 @@ from decimal import Decimal, InvalidOperation
 from django.contrib.auth.hashers import make_password, check_password
 from django.db.models.functions import Random
 from django.core.paginator import Paginator
+from django.shortcuts import get_object_or_404
+
 
 
 
@@ -145,7 +147,9 @@ def single(request):
     else:
         user_name="Welcome please Login"
     id=request.GET.get("product")
-    product=Product.objects.get(id=id)
+    product = Product.objects.order_by('-date').first()
+    if id:
+        product = get_object_or_404(Product, id=id)
     categories = Category.objects.annotate(count=Count("product"))
     contacts=Contact.objects.first()
     colors = Color.objects.annotate(count=Count("product"))
