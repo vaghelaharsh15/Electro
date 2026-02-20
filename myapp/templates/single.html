@@ -28,14 +28,16 @@
                     <div class="product-categories mb-4">
                         <h4>Products Categories</h4>
                         <ul class="list-unstyled">
+                            {% for i in categories %}
                             <li>
                                 <div class="categories-item">
                                     <a href="#" class="text-dark"><i class="fas fa-apple-alt text-secondary me-2"></i>
-                                        Accessories</a>
-                                    <span>(3)</span>
+                                        {{i.name}}</a>
+                                    <span>({{i.count}})</span>
                                 </div>
                             </li>
-                            <li>
+                            {% endfor %}
+                            {% comment %} <li>
                                 <div class="categories-item">
                                     <a href="#" class="text-dark"><i class="fas fa-apple-alt text-secondary me-2"></i>
                                         Electronics & Computer</a>
@@ -62,23 +64,30 @@
                                             class="fas fa-apple-alt text-secondary me-2"></i>SmartPhone & Smart TV</a>
                                     <span>(5)</span>
                                 </div>
-                            </li>
+                            </li> {% endcomment %}
                         </ul>
                     </div>
                     <div class="additional-product mb-4">
                         <h4>Select By Color</h4>
-                        <div class="additional-product-item">
-                            <input type="radio" class="me-2" id="Categories-1" name="Categories-1" value="Beverages">
-                            <label for="Categories-1" class="text-dark"> Gold</label>
-                        </div>
-                        <div class="additional-product-item">
+                        <ul class="list-unstyled">
+                            {% for color in colors %}
+                            <li>
+                                <div class="product-color-item mt-3">
+                                    <a href="?color={{ color.id }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}" class="text-dark"><i class="fas fa-apple-alt text-secondary me-2"></i>
+                                        {{ color.name }}</a>
+                                    <span>({{ color.count }})</span>
+                                </div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% comment %} <div class="additional-product-item">
                             <input type="radio" class="me-2" id="Categories-2" name="Categories-1" value="Beverages">
                             <label for="Categories-2" class="text-dark"> Green</label>
                         </div>
                         <div class="additional-product-item">
                             <input type="radio" class="me-2" id="Categories-3" name="Categories-1" value="Beverages">
                             <label for="Categories-3" class="text-dark"> White</label>
-                        </div>
+                        </div> {% endcomment %}
                     </div>
                     <div class="featured-product mb-4">
                         <h4 class="mb-3">Featured products</h4>
@@ -234,10 +243,10 @@
                                 <div class="single-item"
                                     data-dot="<img class='img-fluid' src='img/product-4.png' alt=''>">
                                     <div class="single-inner bg-light rounded">
-                                        <img src="{% static "img/product-4.png" %}" class="img-fluid rounded" alt="Image">
+                                        <img src="{{product.image.url}}" class="img-fluid rounded" alt="Image">
                                     </div>
                                 </div>
-                                <div class="single-item"
+                                {% comment %} <div class="single-item"
                                     data-dot="<img class='img-fluid' src='img/product-5.png' alt=''>">
                                     <div class="single-inner bg-light rounded">
                                         <img src="{% static "img/product-5.png" %}" class="img-fluid rounded" alt="Image">
@@ -260,13 +269,14 @@
                                     <div class="single-inner bg-light rounded">
                                         <img src="{% static "img/product-3.png" %}" class="img-fluid rounded" alt="Image">
                                     </div>
-                                </div>
+                                </div> {% endcomment %}
                             </div>
                         </div>
+                        
                         <div class="col-xl-6">
-                            <h4 class="fw-bold mb-3">Smart Camera</h4>
-                            <p class="mb-3">Category: Electronics</p>
-                            <h5 class="fw-bold mb-3">3,35 $</h5>
+                            <h4 class="fw-bold mb-3">{{product.name}}</h4>
+                            <p class="mb-3">{{product.category.name}}</p>
+                            <h5 class="fw-bold mb-3">Rs. {{product.price}}</h5>
                             <div class="d-flex mb-4">
                                 <i class="fa fa-star text-secondary"></i>
                                 <i class="fa fa-star text-secondary"></i>

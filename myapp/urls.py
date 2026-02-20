@@ -23,6 +23,7 @@ urlpatterns = [
     path("index/",views.index,name="index"),
     path("shop/",views.shop,name="shop"),
     path("single/",views.single,name="single"),
+    # path("single/<int:id>/",views.single,name="single"),
     path("bestseller/",views.bestseller,name="bestseller"),
     path("cart/",views.cart,name="cart"),
     path("add-to-cart/",views.add_to_cart,name="add_to_cart"),

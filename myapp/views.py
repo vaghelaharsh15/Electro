@@ -23,6 +23,11 @@ def _parse_decimal(value: str | None):
 
 
 def _filtered_products_context(request):
+    if "user_id" in request.session:
+        user_name=request.session.get("user_name")  
+    else:
+        user_name="Welcome please Login"
+
     products = Product.objects.all()
     contacts=Contact.objects.first()
     category_ids = request.GET.getlist("category")
@@ -87,6 +92,7 @@ def _filtered_products_context(request):
         "contacts":contacts,
         "show_page":show_page,
         "query_string": query_string,
+        "user_name":user_name
     }
 
 def product_list(request):
@@ -108,6 +114,12 @@ def index(request):
     categories = Category.objects.annotate(count=Count("product"))
     paginator = Paginator(products,12)
     page_number = request.GET.get("page",1)
+    if "user_id" in request.session:
+        user_name=request.session.get("user_name")  
+    else:
+        user_name="Welcome please Login"
+    # print(user_name)
+
     try:
         page_number = int(page_number)
     except ValueError:
@@ -119,7 +131,8 @@ def index(request):
     "products": products,
     "new_arrivals_products": new_arrivals_products,
     "categories": categories,
-    "show_page":show_page
+    "show_page":show_page,
+    "user_name":user_name
     })
     # return render(request,"index.html")
 
@@ -127,11 +140,28 @@ def shop(request):
     context= _filtered_products_context(request)
     return render(request, "shop.html",context)
 def single(request):
+    if "user_id" in request.session:
+        user_name=request.session.get("user_name")  
+    else:
+        user_name="Welcome please Login"
+    id=request.GET.get("product")
+    product=Product.objects.get(id=id)
     categories = Category.objects.annotate(count=Count("product"))
     contacts=Contact.objects.first()
-    return render(request,"single.html",{"contacts":contacts,"categories":categories})
+    colors = Color.objects.annotate(count=Count("product"))
+    return render(request,"single.html",{
+        "contacts":contacts,
+        "categories":categories,
+        "user_name":user_name,
+        "product":product,
+        "colors":colors
+        })
 
 def bestseller(request):
+    if "user_id" in request.session:
+        user_name=request.session.get("user_name")  
+    else:
+        user_name="Welcome please Login"
     products = Product.objects.order_by(Random())
     contacts = Contact.objects.first()
     categories = Category.objects.annotate(count=Count("product"))
@@ -141,6 +171,7 @@ def bestseller(request):
         "products": products,
         "categories": categories,
         "new_arrivals_products": new_arrivals_products,
+        "user_name":user_name
     })
 
 def _get_cart(request):
@@ -203,36 +234,52 @@ def remove_from_cart(request):
     return redirect('cart')
 
 def cart(request):
-    categories = Category.objects.annotate(count=Count("product"))
-    contacts=Contact.objects.first()
-    cart_items = _get_cart(request)
-    # Only process dict items (ignore corrupted/old session data)
-    valid_items = [item for item in cart_items if isinstance(item, dict)]
-    for item in valid_items:
-        item['total'] = item.get('price', 0) * item.get('quantity', 0)
-    cart_total = sum(item['total'] for item in valid_items)
-    return render(request, "cart.html", {
-        "contacts":contacts,
-        'cart_items': valid_items,
-        'cart_total': cart_total,
-        "categories":categories
-    })
+    if "user_id" in request.session:
+        categories = Category.objects.annotate(count=Count("product"))
+        contacts=Contact.objects.first()
+        cart_items = _get_cart(request)
+        user_name=request.session.get("user_name") 
+        # Only process dict items (ignore corrupted/old session data)
+        valid_items = [item for item in cart_items if isinstance(item, dict)]
+        for item in valid_items:
+            item['total'] = item.get('price', 0) * item.get('quantity', 0)
+        cart_total = sum(item['total'] for item in valid_items)
+        return render(request, "cart.html", {
+            "contacts":contacts,
+            'cart_items': valid_items,
+            'cart_total': cart_total,
+            "categories":categories,
+            "user_name":user_name
+        })
+    else:
+        return redirect("login")
 
 def cheackout(request):
-    contacts=Contact.objects.first()
-    categories = Category.objects.annotate(count=Count("product"))
-    return render(request,"cheackout.html",{"contacts":contacts,"categories":categories})
+    if "user_id" in request.session:
+        contacts=Contact.objects.first()
+        user_name=request.session.get("user_name") 
+        categories = Category.objects.annotate(count=Count("product"))
+        return render(request,"cheackout.html",{"contacts":contacts,"categories":categories,"user_name":user_name})
+    else:
+        return redirect("login")
 
 def error(request):
+    if "user_id" in request.session:
+        user_name=request.session.get("user_name")  
+    else:
+        user_name="Welcome please Login"
     contacts=Contact.objects.first()
     categories = Category.objects.annotate(count=Count("product"))
-    return render(request,"404.html",{"contacts":contacts,"categories":categories})
+    return render(request,"404.html",{"contacts":contacts,"categories":categories,"user_name":user_name})
 
 def contact(request):
-    contacts=Contact.objects.first()
-    categories = Category.objects.annotate(count=Count("product"))
-    return render(request,"contact.html",{"contacts":contacts,"categories":categories})
-
+    if "user_id" in request.session:
+        contacts=Contact.objects.first()
+        user_name=request.session.get("user_name") 
+        categories = Category.objects.annotate(count=Count("product"))
+        return render(request,"contact.html",{"contacts":contacts,"categories":categories,"user_name":user_name})
+    else:
+        return redirect("login")
 
 def register(request):
     error = None
