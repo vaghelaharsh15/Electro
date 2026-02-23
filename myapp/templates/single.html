@@ -292,7 +292,7 @@
                             </div>
                             <div class="d-flex flex-column mb-3">
                                 <small>Product SKU: N/A</small>
-                                <small>Available: <strong class="text-primary">20 items in stock</strong></small>
+                                <small>Available: <strong class="text-primary">{{product.stock}}</strong></small>
                             </div>
                             <p class="mb-4">The generated Lorem Ipsum is therefore always free from repetition injected
                                 humour, or non-characteristic words etc.</p>
@@ -329,7 +329,7 @@
                             <div class="tab-content mb-5">
                                 <div class="tab-pane active" id="nav-about" role="tabpanel"
                                     aria-labelledby="nav-about-tab">
-                                    <p>Our new <b class="fw-bold">HPB12 / A12 battery</b> is rated at 2000mAh and
+                                    {% comment %} <p>Our new <b class="fw-bold">HPB12 / A12 battery</b> is rated at 2000mAh and
                                         designed to power up Black and Decker / FireStorm line of 12V tools allowing
                                         users to run multiple devices off the same battery pack. The HPB12 is compatible
                                         with the following Black and Decker power tool models:
@@ -353,7 +353,8 @@
                                     <b class="fw-bold mb-0">Best replacement for the following Black and Decker OEM
                                         battery part numbers:</b>
                                     <p class="small">HPB12, A12, A12EX, A12-XJ, A1712, B-8315, BD1204L, BD-1204L,
-                                        BPT1047, FS120B, FS120BX, FSB12.</p>
+                                        BPT1047, FS120B, FS120BX, FSB12.</p> {% endcomment %}
+                                    {{product.discription}}
                                 </div>
                                 <div class="tab-pane" id="nav-mission" role="tabpanel"
                                     aria-labelledby="nav-mission-tab">
