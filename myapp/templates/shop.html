@@ -129,7 +129,7 @@
                             {% for cat in categories %}
                             <li>
                                 <div class="categories-item">
-                                    <a href="?category={{ cat.id }}{% if selected_color %}&color={{ selected_color }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}" class="text-dark"><i class="fas fa-apple-alt text-secondary me-2"></i>
+                                    <a href="?category={{ cat.id }}{% if selected_color %}&color={{ selected_color }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}" class="text-dark"><i class="fas fa-tags text-secondary me-2"></i>
                                         {{ cat.name }}</a>
                                     <span>({{ cat.count }})</span>
                                     <br>
@@ -191,7 +191,7 @@
                             {% for color in colors %}
                             <li>
                                 <div class="product-color-item">
-                                    <a href="?color={{ color.id }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}" class="text-dark"><i class="fas fa-apple-alt text-secondary me-2"></i>
+                                    <a href="?color={{ color.id }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}" class="text-dark"><i class="fas fa-tags text-secondary me-2"></i>
                                         {{ color.name }}</a>
                                     <span>({{ color.count }})</span>
                                 </div>

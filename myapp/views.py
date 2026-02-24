@@ -154,6 +154,7 @@ def single(request):
     product = Product.objects.order_by('-date').first()
     if id:
         product = get_object_or_404(Product, id=id)
+    related_products=Product.objects.filter(category=product.category)
     categories = Category.objects.annotate(count=Count("product"))
     contacts=Contact.objects.first()
     colors = Color.objects.annotate(count=Count("product"))
@@ -162,7 +163,8 @@ def single(request):
         "categories":categories,
         "user_name":user_name,
         "product":product,
-        "colors":colors
+        "colors":colors,
+        "related_products":related_products
         })
 
 def bestseller(request):

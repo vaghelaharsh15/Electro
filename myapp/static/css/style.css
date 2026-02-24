@@ -593,6 +593,7 @@
 
 .shop .product-color .product-color-item {
     display: flex;
+    justify-content: space-between;
     padding: 10px 0;
 }
 
