@@ -8,6 +8,10 @@ from django.contrib.auth.hashers import make_password, check_password
 from django.db.models.functions import Random
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
+import random, time
+from django.core.mail import send_mail
+from django.conf import settings
+from django.contrib.auth.models import User
 
 
 
@@ -372,4 +376,260 @@ def profile(request):
             success = "Profile updated successfully."
     return render(request, "profile.html", {"user": user, "error": error, "success": success})
 
+import random
+from django.contrib.auth.hashers import make_password
+from django.core.mail import send_mail
+from django.shortcuts import render, redirect
 
+def forgot(request):
+    context = {}
+
+    if request.method == "POST":
+
+        # -------- SEND OTP --------
+        if "send_otp" in request.POST:
+            email = request.POST.get("email", "").strip()
+
+            if not email:
+                context["error"] = "Email is required"
+                return render(request, "forgot.html", context)
+
+            if not AppUser.objects.filter(email=email).exists():
+                context["error"] = "Email not registered"
+                return render(request, "forgot.html", context)
+
+            otp = random.randint(100000, 999999)
+
+            request.session["reset_email"] = email
+            request.session["reset_otp"] = str(otp)
+            request.session["otp_time"] = time.time()
+
+            send_mail(
+                "Password Reset OTP",
+                f"Your OTP is {otp}",
+                settings.EMAIL_HOST_USER,
+                [email],
+            )
+
+            context["message"] = "OTP sent to your email"
+            context["otp_sent"] = True
+            return render(request, "forgot.html", context)
+
+        # -------- VERIFY OTP --------
+        if "verify_otp" in request.POST:
+            entered_otp = request.POST.get("otp", "").strip()
+            new_password = request.POST.get("new_password", "")
+            confirm_password = request.POST.get("confirm_password", "")
+
+            session_otp = request.session.get("reset_otp")
+            email = request.session.get("reset_email")
+            otp_time = request.session.get("otp_time")
+
+            if not (session_otp and email and otp_time):
+                context["error"] = "OTP session expired. Please request a new OTP."
+                return render(request, "forgot.html", context)
+
+            # OTP expiry check (5 minutes)
+            if time.time() - otp_time > 300:
+                context["error"] = "OTP expired. Please request a new OTP."
+                return render(request, "forgot.html", context)
+
+            if entered_otp != session_otp:
+                context["error"] = "Invalid OTP"
+                context["otp_sent"] = True
+                return render(request, "forgot.html", context)
+
+            if not new_password or new_password != confirm_password:
+                context["error"] = "Passwords do not match"
+                context["otp_sent"] = True
+                return render(request, "forgot.html", context)
+
+            try:
+                user = AppUser.objects.get(email=email)
+            except AppUser.DoesNotExist:
+                context["error"] = "User not found"
+                return render(request, "forgot.html", context)
+
+            user.password = make_password(new_password)
+            user.save()
+
+            # Clear reset-related session keys
+            for key in ("reset_email", "reset_otp", "otp_time"):
+                if key in request.session:
+                    del request.session[key]
+
+            context["message"] = "Password reset successful. You can now login."
+            return render(request, "forgot.html", context)
+
+    return render(request, "forgot.html", context)
+    
+# def forgot(request):
+#     if request.method == "POST":
+#         if 'otp' in request.POST:
+#             # Step 2: Verify OTP and change password
+#             otp = request.POST.get('otp')
+#             new_password = request.POST.get('new_password')
+#             confirm_password = request.POST.get('confirm_password')
+#             user_id = request.session.get('reset_user_id')
+#             if not user_id:
+#                 return redirect('forgot_password')
+#             user = User.objects.get(id=user_id)
+#             if str(user.forgot_password) == otp:
+#                 if new_password == confirm_password:
+#                     user.password = new_password
+#                     user.forgot_password = None
+#                     user.save()
+#                     del request.session['reset_user_id']
+#                     return render(request, "login.html", {"msg": "Your password changed successfully. Please login."})
+#                 else:
+#                     return render(request, "forgot.html", {"show_otp_form": True, "msg": "Passwords do not match"})
+#             else:
+#                 return render(request, "forgot.html", {"show_otp_form": True, "msg": "Invalid OTP"})
+#         else:
+#             # Step 1: Send OTP
+#             identifier = request.POST.get('identifier')
+#             try:
+#                 if '@' in identifier:
+#                     user = User.objects.get(email=identifier)
+#                     otp = random.randint(1000, 9999)
+#                     user.forgot_password = otp
+#                     user.save()
+#                     request.session['reset_user_id'] = user.id
+#                     # Send OTP via email
+#                     send_mail(
+#                         'Forgot Password OTP',
+#                         f'Your OTP for password reset is {otp}.',
+#                         'your_gmail@gmail.com',  # Replace with your sender email
+#                         [user.email],
+#                         fail_silently=False,
+#                     )
+#                     msg = "OTP sent to your email."
+#                 else:
+#                     user = User.objects.get(phone=identifier)
+#                     otp = random.randint(1000, 9999)
+#                     user.forgot_password = otp
+#                     user.save()
+#                     request.session['reset_user_id'] = user.id
+#                     # For demo: print OTP to console. For production, integrate SMS API here.
+#                     # print(f"Send this OTP to the user's phone via SMS: {otp}")
+#                     # send_sms_otp(user.phone, otp)
+#                     msg = f"OTP sent to your phone number: {user.phone} (for demo, check console)"
+#                 return render(request, "forgot.html", {"show_otp_form": True, "msg": msg})
+#             except User.DoesNotExist:
+#                 return render(request, "forgot.html", {"msg": "User not found"})
+#     return render(request, "forgot.html")
+
+# def otp_verify(request):
+#     user_id = request.session.get('reset_user_id')
+#     if not user_id:
+#         return redirect('forgot_password')
+#     user = User.objects.get(id=user_id)
+#     if request.method == "POST":
+#         otp = request.POST.get('otp')
+#         password = request.POST.get('password')
+#         confirm_password = request.POST.get('confirm_password')
+#         if str(user.forgot_password) == otp:
+#             if password == confirm_password:
+#                 user.password = password
+#                 user.forgot_password = None
+#                 user.save()
+#                 del request.session['reset_user_id']
+#                 return redirect('login')
+#             else:
+#                 return render(request, "forgot.html", {"msg": "Passwords do not match"})
+#         else:
+#             return render(request, "forgot.html", {"msg": "Invalid OTP"})
+#     return render(request, "login.html")
+
+
+
+# def forgot(request):
+#     context = {}
+
+#     if request.method == "POST":
+
+#         # -------- SEND OTP --------
+#         if "send_otp" in request.POST:
+#             email = request.POST.get("email")
+
+#             if not AppUser.objects.filter(email=email).exists():
+#                 context["error"] = "Email not registered"
+#                 return render(request, "forgot.html", context)
+
+#             otp = random.randint(100000, 999999)
+
+#             request.session["reset_email"] = email
+#             request.session["reset_otp"] = str(otp)
+#             request.session["otp_time"] = time.time()
+
+#             send_mail(
+#                 "Password Reset OTP",
+#                 f"Your OTP is {otp}",
+#                 settings.EMAIL_HOST_USER,
+#                 [email],
+#             )
+
+#             context["message"] = "OTP sent to your email"
+#             context["otp_sent"] = True
+#             return render(request, "forgot.html", context)
+
+#         # -------- VERIFY OTP --------
+#         if "verify_otp" in request.POST:
+#             entered_otp = request.POST.get("otp")
+#             new_password = request.POST.get("new_password")
+#             confirm_password = request.POST.get("confirm_password")
+
+#             session_otp = request.session.get("reset_otp")
+#             email = request.session.get("reset_email")
+#             otp_time = request.session.get("otp_time")
+
+#             # OTP expiry check (5 minutes)
+#             if time.time() - otp_time > 300:
+#                 context["error"] = "OTP Expired"
+#                 return render(request, "forgot.html", context)
+
+#             if entered_otp != session_otp:
+#                 context["error"] = "Invalid OTP"
+#                 context["otp_sent"] = True
+#                 return render(request, "forgot.html", context)
+
+#             if new_password != confirm_password:
+#                 context["error"] = "Passwords do not match"
+#                 context["otp_sent"] = True
+#                 return render(request, "forgot.html", context)
+
+#             user = AppUser.objects.get(email=email)
+#             user.set_password(new_password)
+#             user.save()
+
+#             # Clear session
+#             request.session.flush()
+
+#             context["message"] = "Password reset successful"
+#             return render(request, "forgot.html", context)
+
+#     return render(request, "forgot.html", context)
+
+# # def forgot(request):
+# #     return render(request,"forgot.html")
+
+# # def send_otp(request):
+# #     if request.method == "POST":
+# #         email = request.POST.get("email")
+
+# #         otp = random.randint(100000, 999999)
+
+# #         request.session['reset_email'] = email
+# #         request.session['reset_otp'] = str(otp)
+
+# #         send_mail(
+# #             subject="Your Password Reset OTP",
+# #             message=f"Your OTP is: {otp}",
+# #             from_email=settings.EMAIL_HOST_USER,
+# #             recipient_list=[email],
+# #             fail_silently=False,
+# #         )
+
+# #         return render(request, "forgot.html", {"message": "OTP sent to your email"})
+    
+# #     return render(request, "send_otp.html")

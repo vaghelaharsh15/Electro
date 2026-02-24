@@ -1,0 +1,89 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Forgot Password - Electro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+
+    <style>
+        .auth-container { 
+            min-height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            background: linear-gradient(135deg, #0d6efd 0%, #6c757d 100%);
+        }
+        .auth-card { 
+            background: #fff; 
+            border-radius: 1rem; 
+            box-shadow: 0 1rem 3rem rgba(0,0,0,0.175); 
+            padding: 2.5rem; 
+            max-width: 420px; 
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+<div class="auth-container">
+<div class="auth-card">
+
+    <h3 class="text-primary mb-4 text-center">Forgot Password</h3>
+
+    {% if message %}
+        <div class="alert alert-success">{{ message }}</div>
+    {% endif %}
+    {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+
+        <!-- Email Field -->
+        <div class="mb-3">
+            <label>Email</label>
+            <input type="email" name="email" class="form-control"
+                   value="{{ request.session.reset_email }}" required>
+        </div>
+
+        <!-- Show OTP Fields Only After OTP Sent -->
+        {% if otp_sent %}
+        <div class="mb-3">
+            <label>Enter OTP</label>
+            <input type="text" name="otp" class="form-control">
+        </div>
+
+        <div class="mb-3">
+            <label>New Password</label>
+            <input type="password" name="new_password" class="form-control">
+        </div>
+
+        <div class="mb-3">
+            <label>Confirm Password</label>
+            <input type="password" name="confirm_password" class="form-control">
+        </div>
+
+        <button type="submit" name="verify_otp" class="btn btn-primary w-100">
+            Reset Password
+        </button>
+
+        {% else %}
+        <button type="submit" name="send_otp" class="btn btn-primary w-100">
+            Send OTP
+        </button>
+        {% endif %}
+
+    </form>
+
+    <div class="text-center mt-3">
+        <a href="{% url 'login' %}">Back to Login</a>
+    </div>
+
+</div>
+</div>
+</body>
+</html>

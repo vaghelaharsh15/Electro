@@ -241,7 +241,7 @@
                         <div class="col-xl-6">
                             <div class="single-carousel owl-carousel">
                                 <div class="single-item"
-                                    data-dot="<img class='img-fluid' src='img/product-4.png' alt=''>">
+                                    data-dot="<img class='img-fluid' src='{{product.image.url}}' alt=''>">
                                     <div class="single-inner bg-light rounded">
                                         <img src="{{product.image.url}}" class="img-fluid rounded" alt="Image">
                                     </div>
@@ -354,7 +354,17 @@
                                         battery part numbers:</b>
                                     <p class="small">HPB12, A12, A12EX, A12-XJ, A1712, B-8315, BD1204L, BD-1204L,
                                         BPT1047, FS120B, FS120BX, FSB12.</p> {% endcomment %}
+
+                                    {% comment %} {% with parts=product.discription.split:"Key Features" %}
+                                        <p>{{ parts.0 }}</p>
+                                    
+                                        {% if parts|length > 1 %}
+                                            <h4>Key Features</h4>
+                                            <p>{{ parts.1|linebreaks }}</p>
+                                        {% endif %}
+                                    {% endwith %} {% endcomment %}
                                     {{product.discription}}
+                                    
                                 </div>
                                 <div class="tab-pane" id="nav-mission" role="tabpanel"
                                     aria-labelledby="nav-mission-tab">
