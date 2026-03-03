@@ -188,6 +188,20 @@
                     <div class="product-color mb-3">
                         <h4>Select By Color</h4>
                         <ul class="list-unstyled">
+                            <li>
+                                <div class="product-color-item">
+                                    <a href="?{% if selected_category %}category={{ selected_category }}{% endif %}
+                                             {% if min_price %}{% if selected_category %}&{% endif %}min_price={{ min_price }}{% endif %}
+                                             {% if max_price %}{% if selected_category or min_price %}&{% endif %}max_price={{ max_price }}{% endif %}"
+                                       class="text-dark {% if not selected_color %}fw-bold{% endif %}">
+                                       
+                                        <i class="fas fa-tags text-secondary me-2"></i>
+                                        All Colour
+                                    </a>
+                            
+                                    <span>({{ total_products_count }})</span>
+                                </div>
+                            </li>
                             {% for color in colors %}
                             <li>
                                 <div class="product-color-item">
@@ -392,14 +406,14 @@
                                                 <div class="text-center rounded-bottom p-4">
                                                     <a href="#" class="d-block mb-2">{{i.brand}}</a>
                                                     <a href="#" class="d-block h4">{{i.product_name}}</a>
-                                                    <del class="me-2 fs-5">{{i.price|add:2000}}</del>
-                                                    <span class="text-primary fs-5">{{i.price}}</span>
+                                                    <del class="me-2 fs-5">₹ {{i.price|add:2000}}</del>
+                                                    <span class="text-primary fs-5">₹ {{i.price}}</span>
                                                 </div>
                                             </div>
                                             <div
                                                 class="product-item-add border border-top-0 rounded-bottom  text-center p-4 pt-0">
-                                                <a href="#"
-                                                    class="btn btn-primary border-secondary rounded-pill py-2 px-4 mb-4 add-to-cart-btn"><i
+                                                <a href="{% url 'add_to_cart' i.id %}"
+                                                    class="btn btn-primary border-secondary rounded-pill py-2 px-4 mb-4 add_to_cart-btn"><i
                                                         class="fas fa-shopping-cart me-2"></i> Add To Cart</a>
                                                 <div class="d-flex justify-content-between align-items-center">
                                                     <div class="d-flex">

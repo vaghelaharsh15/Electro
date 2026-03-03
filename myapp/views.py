@@ -12,6 +12,7 @@ import random, time
 from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required
 
 
 
@@ -196,73 +197,296 @@ def _get_cart(request):
         request.session.modified = True
     return request.session['cart']
 
-def add_to_cart(request):
-    if request.method != 'POST':
-        return redirect('cart')
-    name = request.POST.get('name', 'Product').strip()
-    price = request.POST.get('price', '0').strip()
-    model = request.POST.get('model', '').strip()
-    try:
-        quantity = int(request.POST.get('quantity', 1))
-    except ValueError:
-        quantity = 1
-    if quantity < 1:
-        quantity = 1
-    try:
-        price_float = float(price.replace(',', ''))
-    except ValueError:
-        price_float = 0.0
-    cart = _get_cart(request)
-    # Match by name + model to update quantity (only dict items)
-    for item in cart:
-        if not isinstance(item, dict):
-            continue
-        if item.get('name') == name and item.get('model') == model:
-            item['quantity'] = item.get('quantity', 0) + quantity
-            break
-    else:
-        cart.append({
-            'name': name,
-            'model': model,
-            'price': price_float,
-            'quantity': quantity,
-        })
-    request.session.modified = True
-    return redirect('cart')
+# def add_to_cart(request):
+    # if request.method != 'POST':
+    #     return redirect('cart')
+    # name = request.POST.get('name', 'Product').strip()
+    # price = request.POST.get('price', '0').strip()
+    # model = request.POST.get('model', '').strip()
+    # try:
+    #     quantity = int(request.POST.get('quantity', 1))
+    # except ValueError:
+    #     quantity = 1
+    # if quantity < 1:
+    #     quantity = 1
+    # try:
+    #     price_float = float(price.replace(',', ''))
+    # except ValueError:
+    #     price_float = 0.0
+    # cart = _get_cart(request)
+    # # Match by name + model to update quantity (only dict items)
+    # for item in cart:
+    #     if not isinstance(item, dict):
+    #         continue
+    #     if item.get('name') == name and item.get('model') == model:
+    #         item['quantity'] = item.get('quantity', 0) + quantity
+    #         break
+    # else:
+    #     cart.append({
+    #         'name': name,
+    #         'model': model,
+    #         'price': price_float,
+    #         'quantity': quantity,
+    #     })
+    # request.session.modified = True
+    # return redirect('cart')
+def add_to_cart(request, product_id=None):
+    """
+    Add a product to the logged-in AppUser's cart (DB-backed).
+    Supports:
+    - GET /add_to_cart/<product_id>/ (links)
+    - POST /add_to_cart/ with product_id in form
+    """
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return redirect("login")
 
-def remove_from_cart(request):
-    if request.method != 'POST':
-        return redirect('cart')
     try:
-        index = int(request.POST.get('index', -1))
-    except ValueError:
-        return redirect('cart')
-    cart = _get_cart(request)
-    if 0 <= index < len(cart):
-        cart.pop(index)
-        request.session.modified = True
-    return redirect('cart')
+        app_user = AppUser.objects.get(id=user_id)
+    except AppUser.DoesNotExist:
+        request.session.pop("user_id", None)
+        request.session.pop("user_name", None)
+        return redirect("login")
+
+    pid = product_id
+    if pid is None:
+        pid = request.POST.get("product_id") or request.GET.get("product_id") or request.GET.get("product")
+    try:
+        pid_int = int(pid)
+    except (TypeError, ValueError):
+        return redirect("cart")
+
+    product = get_object_or_404(Product, id=pid_int)
+
+    # Quantity (POST supported; links default to 1)
+    quantity = 1
+    if request.method == "POST":
+        try:
+            quantity = int(request.POST.get("quantity", 1))
+        except ValueError:
+            quantity = 1
+        if quantity < 1:
+            quantity = 1
+
+    cart, _ = Cart.objects.get_or_create(user=app_user)
+    item, created = CartItem.objects.get_or_create(
+        cart=cart,
+        product=product,
+        defaults={"quantity": quantity, "price": product.price},
+    )
+    if not created:
+        item.quantity = item.quantity + quantity
+        item.price = product.price
+        item.save()
+
+    return redirect("cart")
+
+
+def update_cart(request, item_id, action):
+    """Increase/decrease quantity for a cart item of logged-in AppUser."""
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return redirect("login")
+
+    try:
+        app_user = AppUser.objects.get(id=user_id)
+    except AppUser.DoesNotExist:
+        request.session.pop("user_id", None)
+        request.session.pop("user_name", None)
+        return redirect("login")
+
+    cart_item = get_object_or_404(CartItem, id=item_id, cart__user=app_user)
+
+    if action == "increase":
+        cart_item.quantity += 1
+        cart_item.save()
+    elif action == "decrease":
+        cart_item.quantity -= 1
+        if cart_item.quantity <= 0:
+            cart_item.delete()
+        else:
+            cart_item.save()
+
+    return redirect("cart")
+
+
+def remove_from_cart(request, item_id=None):
+    """Remove a cart item for logged-in AppUser (supports POST form or URL param)."""
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return redirect("login")
+
+    try:
+        app_user = AppUser.objects.get(id=user_id)
+    except AppUser.DoesNotExist:
+        request.session.pop("user_id", None)
+        request.session.pop("user_name", None)
+        return redirect("login")
+
+    iid = item_id
+    if iid is None:
+        iid = request.POST.get("item_id")
+    try:
+        iid_int = int(iid)
+    except (TypeError, ValueError):
+        return redirect("cart")
+
+    CartItem.objects.filter(id=iid_int, cart__user=app_user).delete()
+    return redirect("cart")
+
 
 def cart(request):
-    if "user_id" in request.session:
-        categories = Category.objects.annotate(count=Count("product"))
-        contacts=Contact.objects.first()
-        cart_items = _get_cart(request)
-        user_name=request.session.get("user_name") 
-        # Only process dict items (ignore corrupted/old session data)
-        valid_items = [item for item in cart_items if isinstance(item, dict)]
-        for item in valid_items:
-            item['total'] = item.get('price', 0) * item.get('quantity', 0)
-        cart_total = sum(item['total'] for item in valid_items)
-        return render(request, "cart.html", {
-            "contacts":contacts,
-            'cart_items': valid_items,
-            'cart_total': cart_total,
-            "categories":categories,
-            "user_name":user_name
-        })
-    else:
+    """Show logged-in AppUser cart."""
+    user_id = request.session.get("user_id")
+    if not user_id:
         return redirect("login")
+
+    try:
+        app_user = AppUser.objects.get(id=user_id)
+    except AppUser.DoesNotExist:
+        request.session.pop("user_id", None)
+        request.session.pop("user_name", None)
+        return redirect("login")
+
+    categories = Category.objects.annotate(count=Count("product"))
+    contacts = Contact.objects.first()
+
+    cart_obj = Cart.objects.filter(user=app_user).first()
+    if not cart_obj:
+        cart_items = []
+        cart_total = 0
+    else:
+        cart_items = list(cart_obj.items.select_related("product").all())
+        cart_total = sum((ci.total_price() for ci in cart_items), Decimal("0"))
+
+    return render(request, "cart.html", {
+        "contacts": contacts,
+        "cart_items": cart_items,
+        "cart_total": cart_total,
+        "categories": categories,
+        "user_name": request.session.get("user_name") or app_user.name,
+    })
+# @login_required
+# def add_to_cart(request, product_id):
+#     product = get_object_or_404(Product, id=product_id)
+
+#     cart, created = Cart.objects.get_or_create(user=request.user)
+
+#     cart_item, created = CartItem.objects.get_or_create(
+#         cart=cart,
+#         product=product,
+#         defaults={'price': product.price}
+#     )
+
+#     if not created:
+#         cart_item.quantity += 1
+#         cart_item.save()
+
+#     return redirect('cart')
+# def remove_from_cart(request):
+#     if request.method != 'POST':
+#         return redirect('cart')
+#     try:
+#         index = int(request.POST.get('index', -1))
+#     except ValueError:
+#         return redirect('cart')
+#     cart = _get_cart(request)
+#     if 0 <= index < len(cart):
+#         cart.pop(index)
+#         request.session.modified = True
+#     return redirect('cart')
+
+
+# @login_required
+# def cart(request):
+
+#     categories = Category.objects.annotate(count=Count("product"))
+#     contacts = Contact.objects.first()
+
+#     # Get user's cart
+#     cart, created = Cart.objects.get_or_create(user=request.user)
+
+#     cart_items = cart.items.select_related("product")
+
+#     cart_total = 0
+#     display_items = []
+
+#     for item in cart_items:
+#         total = item.total_price()
+#         cart_total += total
+
+#         display_items.append({
+#             "product": item.product,
+#             "name": item.product.name,
+#             "model": item.product.id,
+#             "price": item.price,
+#             "quantity": item.quantity,
+#             "total": total,
+#         })
+
+#     return render(request, "cart.html", {
+#         "contacts": contacts,
+#         "cart_items": display_items,
+#         "cart_total": cart_total,
+#         "categories": categories,
+#         "user_name": request.user.username
+#     })
+
+# def cart(request):
+#     if "user_id" in request.session:
+#         categories = Category.objects.annotate(count=Count("product"))
+#         contacts=Contact.objects.first()
+#         cart_items = _get_cart(request)
+#         user_name = request.session.get("user_name")
+#         # Only process dict items (ignore corrupted/old session data)
+#         valid_items = [item for item in cart_items if isinstance(item, dict)]
+
+#         # Fetch product objects for items that have product_id
+#         product_ids = [item.get('product_id') for item in valid_items if item.get('product_id')]
+#         products_map = {p.id: p for p in Product.objects.filter(id__in=product_ids)}
+
+#         display_items = []
+#         cart_total = 0
+#         for item in valid_items:
+#             pid = item.get('product_id')
+#             product = products_map.get(pid)
+#             # Derive name/price from product when available
+#             name = item.get('name')
+#             price = item.get('price')
+#             if product:
+#                 if not name:
+#                     name = product.name
+#                 try:
+#                     price = float(product.price)
+#                 except (TypeError, ValueError):
+#                     price = price or 0
+#             else:
+#                 # Fallback if product no longer exists
+#                 product = None
+#                 if price is None:
+#                     price = 0
+
+#             quantity = item.get('quantity', 0)
+#             total = price * quantity
+#             cart_total += total
+
+#             display_items.append({
+#                 "product": product,
+#                 "name": name or "Product",
+#                 "model": pid,
+#                 "price": price,
+#                 "quantity": quantity,
+#                 "total": total,
+#             })
+#         return render(request, "cart.html", {
+#             "contacts": contacts,
+#             'cart_items': display_items,
+#             'cart_total': cart_total,
+#             "categories": categories,
+#             "user_name": user_name
+#         })
+#     else:
+#         return redirect("login")
 
 def cheackout(request):
     if "user_id" in request.session:
@@ -465,173 +689,3 @@ def forgot(request):
 
     return render(request, "forgot.html", context)
     
-# def forgot(request):
-#     if request.method == "POST":
-#         if 'otp' in request.POST:
-#             # Step 2: Verify OTP and change password
-#             otp = request.POST.get('otp')
-#             new_password = request.POST.get('new_password')
-#             confirm_password = request.POST.get('confirm_password')
-#             user_id = request.session.get('reset_user_id')
-#             if not user_id:
-#                 return redirect('forgot_password')
-#             user = User.objects.get(id=user_id)
-#             if str(user.forgot_password) == otp:
-#                 if new_password == confirm_password:
-#                     user.password = new_password
-#                     user.forgot_password = None
-#                     user.save()
-#                     del request.session['reset_user_id']
-#                     return render(request, "login.html", {"msg": "Your password changed successfully. Please login."})
-#                 else:
-#                     return render(request, "forgot.html", {"show_otp_form": True, "msg": "Passwords do not match"})
-#             else:
-#                 return render(request, "forgot.html", {"show_otp_form": True, "msg": "Invalid OTP"})
-#         else:
-#             # Step 1: Send OTP
-#             identifier = request.POST.get('identifier')
-#             try:
-#                 if '@' in identifier:
-#                     user = User.objects.get(email=identifier)
-#                     otp = random.randint(1000, 9999)
-#                     user.forgot_password = otp
-#                     user.save()
-#                     request.session['reset_user_id'] = user.id
-#                     # Send OTP via email
-#                     send_mail(
-#                         'Forgot Password OTP',
-#                         f'Your OTP for password reset is {otp}.',
-#                         'your_gmail@gmail.com',  # Replace with your sender email
-#                         [user.email],
-#                         fail_silently=False,
-#                     )
-#                     msg = "OTP sent to your email."
-#                 else:
-#                     user = User.objects.get(phone=identifier)
-#                     otp = random.randint(1000, 9999)
-#                     user.forgot_password = otp
-#                     user.save()
-#                     request.session['reset_user_id'] = user.id
-#                     # For demo: print OTP to console. For production, integrate SMS API here.
-#                     # print(f"Send this OTP to the user's phone via SMS: {otp}")
-#                     # send_sms_otp(user.phone, otp)
-#                     msg = f"OTP sent to your phone number: {user.phone} (for demo, check console)"
-#                 return render(request, "forgot.html", {"show_otp_form": True, "msg": msg})
-#             except User.DoesNotExist:
-#                 return render(request, "forgot.html", {"msg": "User not found"})
-#     return render(request, "forgot.html")
-
-# def otp_verify(request):
-#     user_id = request.session.get('reset_user_id')
-#     if not user_id:
-#         return redirect('forgot_password')
-#     user = User.objects.get(id=user_id)
-#     if request.method == "POST":
-#         otp = request.POST.get('otp')
-#         password = request.POST.get('password')
-#         confirm_password = request.POST.get('confirm_password')
-#         if str(user.forgot_password) == otp:
-#             if password == confirm_password:
-#                 user.password = password
-#                 user.forgot_password = None
-#                 user.save()
-#                 del request.session['reset_user_id']
-#                 return redirect('login')
-#             else:
-#                 return render(request, "forgot.html", {"msg": "Passwords do not match"})
-#         else:
-#             return render(request, "forgot.html", {"msg": "Invalid OTP"})
-#     return render(request, "login.html")
-
-
-
-# def forgot(request):
-#     context = {}
-
-#     if request.method == "POST":
-
-#         # -------- SEND OTP --------
-#         if "send_otp" in request.POST:
-#             email = request.POST.get("email")
-
-#             if not AppUser.objects.filter(email=email).exists():
-#                 context["error"] = "Email not registered"
-#                 return render(request, "forgot.html", context)
-
-#             otp = random.randint(100000, 999999)
-
-#             request.session["reset_email"] = email
-#             request.session["reset_otp"] = str(otp)
-#             request.session["otp_time"] = time.time()
-
-#             send_mail(
-#                 "Password Reset OTP",
-#                 f"Your OTP is {otp}",
-#                 settings.EMAIL_HOST_USER,
-#                 [email],
-#             )
-
-#             context["message"] = "OTP sent to your email"
-#             context["otp_sent"] = True
-#             return render(request, "forgot.html", context)
-
-#         # -------- VERIFY OTP --------
-#         if "verify_otp" in request.POST:
-#             entered_otp = request.POST.get("otp")
-#             new_password = request.POST.get("new_password")
-#             confirm_password = request.POST.get("confirm_password")
-
-#             session_otp = request.session.get("reset_otp")
-#             email = request.session.get("reset_email")
-#             otp_time = request.session.get("otp_time")
-
-#             # OTP expiry check (5 minutes)
-#             if time.time() - otp_time > 300:
-#                 context["error"] = "OTP Expired"
-#                 return render(request, "forgot.html", context)
-
-#             if entered_otp != session_otp:
-#                 context["error"] = "Invalid OTP"
-#                 context["otp_sent"] = True
-#                 return render(request, "forgot.html", context)
-
-#             if new_password != confirm_password:
-#                 context["error"] = "Passwords do not match"
-#                 context["otp_sent"] = True
-#                 return render(request, "forgot.html", context)
-
-#             user = AppUser.objects.get(email=email)
-#             user.set_password(new_password)
-#             user.save()
-
-#             # Clear session
-#             request.session.flush()
-
-#             context["message"] = "Password reset successful"
-#             return render(request, "forgot.html", context)
-
-#     return render(request, "forgot.html", context)
-
-# # def forgot(request):
-# #     return render(request,"forgot.html")
-
-# # def send_otp(request):
-# #     if request.method == "POST":
-# #         email = request.POST.get("email")
-
-# #         otp = random.randint(100000, 999999)
-
-# #         request.session['reset_email'] = email
-# #         request.session['reset_otp'] = str(otp)
-
-# #         send_mail(
-# #             subject="Your Password Reset OTP",
-# #             message=f"Your OTP is: {otp}",
-# #             from_email=settings.EMAIL_HOST_USER,
-# #             recipient_list=[email],
-# #             fail_silently=False,
-# #         )
-
-# #         return render(request, "forgot.html", {"message": "OTP sent to your email"})
-    
-# #     return render(request, "send_otp.html")

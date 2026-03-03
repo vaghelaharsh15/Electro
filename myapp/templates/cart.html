@@ -21,8 +21,8 @@
                 <table class="table">
                     <thead>
                         <tr>
+                            <th scope="col">Product</th>
                             <th scope="col">Name</th>
-                            <th scope="col">Model</th>
                             <th scope="col">Price</th>
                             <th scope="col">Quantity</th>
                             <th scope="col">Total</th>
@@ -32,25 +32,35 @@
                     <tbody>
                         {% for item in cart_items %}
                         <tr>
-                            <th scope="row">
-                                <p class="mb-0 py-4">{{ item.name }}</p>
-                            </th>
-                            <td>
-                                <p class="mb-0 py-4">{{ item.model|default:"—" }}</p>
+                            <td class="py-3">
+                                <div class="d-flex align-items-center">
+                                    <img src="{{ item.product.image.url }}"
+                                         class="img-fluid me-3 rounded"
+                                         style="width: 70px; height: 70px; object-fit: cover;"
+                                         alt="{{ item.product.name }}">
+                                </div>
                             </td>
                             <td>
-                                <p class="mb-0 py-4">${{ item.price|floatformat:2 }}</p>
+                                <p class="mb-0 py-4">{{ item.product.name }}</p>
                             </td>
                             <td>
-                                <p class="mb-0 py-4">{{ item.quantity }}</p>
-                            </td>
-                            <td>
-                                <p class="mb-0 py-4">${{ item.total|floatformat:2 }}</p>
+                                <p class="mb-0 py-4">₹ {{ item.product.price|floatformat:2 }}</p>
                             </td>
                             <td class="py-4">
-                                <form method="post" action="{% url 'remove_from_cart' %}" style="display: inline;">
+                                <div class="d-flex align-items-center">
+                                    <a class="btn btn-sm btn-outline-secondary rounded-circle me-2"
+                                       href="{% url 'update_cart' item.id 'decrease' %}">-</a>
+                                    <span>{{ item.quantity }}</span>
+                                    <a class="btn btn-sm btn-outline-secondary rounded-circle ms-2"
+                                       href="{% url 'update_cart' item.id 'increase' %}">+</a>
+                                </div>
+                            </td>
+                            <td>
+                                <p class="mb-0 py-4">₹ {{ item.total_price|floatformat:2 }}</p>
+                            </td>
+                            <td class="py-4">
+                                <form method="post" action="{% url 'remove_from_cart' item.id %}" style="display: inline;">
                                     {% csrf_token %}
-                                    <input type="hidden" name="index" value="{{ forloop.counter0 }}">
                                     <button type="submit" class="btn btn-md rounded-circle bg-light border" title="Remove">
                                         <i class="fa fa-times text-danger"></i>
                                     </button>
@@ -79,19 +89,19 @@
                             <h1 class="display-6 mb-4">Cart <span class="fw-normal">Total</span></h1>
                             <div class="d-flex justify-content-between mb-4">
                                 <h5 class="mb-0 me-4">Subtotal:</h5>
-                                <p class="mb-0">${{ cart_total|floatformat:2 }}</p>
+                                <p class="mb-0">₹ {{ cart_total|floatformat:2 }}</p>
                             </div>
                             <div class="d-flex justify-content-between">
                                 <h5 class="mb-0 me-4">Shipping</h5>
                                 <div>
-                                    <p class="mb-0">Flat rate: $3.00</p>
+                                    <p class="mb-0">Flat rate: ₹200</p>
                                 </div>
                             </div>
-                            <p class="mb-0 text-end">Shipping to Ukraine.</p>
+                            {% comment %} <p class="mb-0 text-end">Shipping to Ukraine.</p> {% endcomment %}
                         </div>
                         <div class="py-4 mb-4 border-top border-bottom d-flex justify-content-between">
                             <h5 class="mb-0 ps-4 me-4">Total</h5>
-                            <p class="mb-0 pe-4">${{ cart_total|floatformat:2 }}</p>
+                            <p class="mb-0 pe-4">₹ {{ cart_total|add:200|floatformat:2 }}</p>
                         </div>
                         <a href="{% url 'cheackout' %}" class="btn btn-primary rounded-pill px-4 py-3 text-uppercase mb-4 ms-4">Proceed Checkout</a>
                     </div>

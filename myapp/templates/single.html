@@ -31,7 +31,7 @@
                             {% for i in categories %}
                             <li>
                                 <div class="categories-item">
-                                    <a href="#" class="text-dark"><i class="fas fa-apple-alt text-secondary me-2"></i>
+                                    <a href="#" class="text-dark"><i class="fas fa-tag -alt text-secondary me-2"></i>
                                         {{i.name}}</a>
                                     <span>({{i.count}})</span>
                                 </div>
@@ -73,7 +73,7 @@
                             {% for color in colors %}
                             <li>
                                 <div class="product-color-item mt-3">
-                                    <a href="?color={{ color.id }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}" class="text-dark"><i class="fas fa-apple-alt text-secondary me-2"></i>
+                                    <a href="?color={{ color.id }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}" class="text-dark"><i class="fas fa-tag -alt text-secondary me-2"></i>
                                         {{ color.name }}</a>
                                     <span>({{ color.count }})</span>
                                 </div>
@@ -311,8 +311,8 @@
                                     </button>
                                 </div>
                             </div>
-                            <a href="{% url 'cart' %}"
-                                class="btn btn-primary border border-secondary rounded-pill px-4 py-2 mb-4 text-primary add-to-cart-btn" data-product-name="Apple iPad Mini" data-product-price="1050" data-product-model="G2356"><i
+                            <a href="{% url 'add_to_cart' product.id %}"
+                                class="btn btn-primary border border-secondary rounded-pill px-4 py-2 mb-4 text-primary add_to_cart-btn" data-product-name="Apple iPad Mini" data-product-price="1050" data-product-model="G2356"><i
                                     class="fa fa-shopping-bag me-2 text-white"></i> Add to cart</a>
                         </div>
                         <div class="col-lg-12">
@@ -486,12 +486,12 @@
                         <div class="text-center rounded-bottom p-4">
                             <a href="#" class="d-block mb-2">{{i.brand}}</a>
                             <a href="#" class="d-block h4">{{i.name}}</a>
-                            <del class="me-2 fs-5">{{i.price|add:2000}}</del>
-                            <span class="text-primary fs-5">{{i.price}}</span>
+                            <del class="me-2 fs-5">₹ {{i.price|add:2000}}</del>
+                            <span class="text-primary fs-5">₹ {{i.price}}</span>
                         </div>
                     </div>
                     <div class="related-item-add border border-top-0 rounded-bottom  text-center p-4 pt-0">
-                        <a href="{% url 'cart' %}" class="btn btn-primary border-secondary rounded-pill py-2 px-4 mb-4 add-to-cart-btn"><i
+                        <a href="{% url 'add_to_cart' i.id %}" class="btn btn-primary border-secondary rounded-pill py-2 px-4 mb-4 add_to_cart-btn"><i
                                 class="fas fa-shopping-cart me-2"></i> Add To Cart</a>
                         <div class="d-flex justify-content-between align-items-center">
                             <div class="d-flex">
