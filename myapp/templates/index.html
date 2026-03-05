@@ -139,12 +139,26 @@
             </div>
             <div class="col-md-4 col-lg-3 text-center text-lg-end">
                 <div class="d-inline-flex align-items-center">
-                    <a href="#" class="text-muted d-flex align-items-center justify-content-center me-3"><span
-                            class="rounded-circle btn-md-square border"><i class="fas fa-random"></i></i></a>
-                    <a href="#" class="text-muted d-flex align-items-center justify-content-center me-3"><span
-                            class="rounded-circle btn-md-square border"><i class="fas fa-heart"></i></a>
-                    <a href="{% url 'cart' %}" class="text-muted d-flex align-items-center justify-content-center me-3"><span
-                            class="rounded-circle btn-md-square border"><i class="fas fa-shopping-cart"></i></a>
+                    <a href="#" class="text-muted d-flex align-items-center justify-content-center me-3">
+                        <span class="rounded-circle btn-md-square border">
+                            <i class="fas fa-random"></i>
+                        </span>
+                    </a>
+                    <a href="{% url 'wishlist' %}" class="text-muted d-flex align-items-center justify-content-center me-3">
+                        <span class="rounded-circle btn-md-square border position-relative">
+                            <i class="fas fa-heart {% if wishlist_count %}text-danger{% endif %}"></i>
+                            {% if wishlist_count %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{ wishlist_count }}
+                            </span>
+                            {% endif %}
+                        </span>
+                    </a>
+                    <a href="{% url 'cart' %}" class="text-muted d-flex align-items-center justify-content-center me-3">
+                        <span class="rounded-circle btn-md-square border">
+                            <i class="fas fa-shopping-cart"></i>
+                        </span>
+                    </a>
                     <div class="dropdown">
                         <a href="#" class="text-muted d-flex align-items-center justify-content-center dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><span class="rounded-circle btn-md-square border"><i class="fa-solid fa-circle-user"></i></span></a>
                         <ul class="dropdown-menu dropdown-menu-end">
@@ -489,8 +503,14 @@
                                                 <i class="fas fa-star"></i>
                                             </div>
                                             <div class="d-flex">
-                                                <a href="#" class="text-primary d-flex align-items-center justify-content-center me-3"><span class="rounded-circle btn-sm-square border"><i class="fas fa-random"></i></span></a>
-                                                <a href="#" class="text-primary d-flex align-items-center justify-content-center me-0"><span class="rounded-circle btn-sm-square border"><i class="fas fa-heart"></i></span></a>
+                                                <a href="#" class="text-primary d-flex align-items-center justify-content-center me-3">
+                                                    <span class="rounded-circle btn-sm-square border"><i class="fas fa-random"></i></span>
+                                                </a>
+                                                <a href="{% url 'toggle_wishlist' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-0">
+                                                    <span class="rounded-circle btn-sm-square border">
+                                                        <i class="fas fa-heart {% if i.id in wishlist_ids %}text-danger{% else %}text-muted{% endif %}"></i>
+                                                    </span>
+                                                </a>
                                             </div>
                                         </div>
                                     </div>

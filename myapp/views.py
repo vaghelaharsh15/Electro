@@ -12,7 +12,6 @@ import random, time
 from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.contrib.auth.decorators import login_required
 
 
 
@@ -31,9 +30,9 @@ def _parse_decimal(value: str | None):
 
 def _filtered_products_context(request):
     if "user_id" in request.session:
-        user_name=request.session.get("user_name")  
+        user_name = request.session.get("user_name")
     else:
-        user_name="Welcome please Login"
+        user_name = "Welcome please Login"
 
     products = Product.objects.all()
     contacts=Contact.objects.first()
@@ -86,6 +85,9 @@ def _filtered_products_context(request):
     if "page" in get_copy:
         del get_copy["page"]
     query_string = get_copy.urlencode()
+    # Wishlist info for current user
+    wishlist_ids, wishlist_count = _wishlist_ids_and_count(request)
+
     return {
         "products": products,
         "pid": products,  # template expects `pid`
@@ -96,11 +98,31 @@ def _filtered_products_context(request):
         "selected_color": color_param or "",
         "min_price": "" if min_price is None else str(min_price),
         "max_price": "" if max_price is None else str(max_price),
-        "contacts":contacts,
-        "show_page":show_page,
+        "contacts": contacts,
+        "show_page": show_page,
         "query_string": query_string,
-        "user_name":user_name
+        "user_name": user_name,
+        "wishlist_ids": wishlist_ids,
+        "wishlist_count": wishlist_count,
     }
+
+
+def _wishlist_ids_and_count(request):
+    """Return (product_id_list, count) for the logged-in AppUser's wishlist."""
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return [], 0
+    try:
+        app_user = AppUser.objects.get(id=user_id)
+    except AppUser.DoesNotExist:
+        return [], 0
+    wishlist = Wishlist.objects.filter(user=app_user).first()
+    if not wishlist:
+        return [], 0
+    ids = list(
+        wishlist.items.values_list("product_id", flat=True)
+    )
+    return ids, len(ids)
 
 def product_list(request):
     # Keep /products/ working; use the existing shop template + filtering sidebar.
@@ -122,9 +144,9 @@ def index(request):
     paginator = Paginator(products,12)
     page_number = request.GET.get("page",1)
     if "user_id" in request.session:
-        user_name=request.session.get("user_name")  
+        user_name = request.session.get("user_name")
     else:
-        user_name="Welcome please Login"
+        user_name = "Welcome please Login"
     # print(user_name)
 
     try:
@@ -132,14 +154,19 @@ def index(request):
     except ValueError:
         page_number = 1 
     products = paginator.get_page(page_number)
-    show_page=paginator.get_elided_page_range(page_number,on_each_side=1,on_ends=1)
+    show_page = paginator.get_elided_page_range(page_number, on_each_side=1, on_ends=1)
+
+    wishlist_ids, wishlist_count = _wishlist_ids_and_count(request)
+
     return render(request, "index.html", {
-    "contacts": contacts,
-    "products": products,
-    "new_arrivals_products": new_arrivals_products,
-    "categories": categories,
-    "show_page":show_page,
-    "user_name":user_name
+        "contacts": contacts,
+        "products": products,
+        "new_arrivals_products": new_arrivals_products,
+        "categories": categories,
+        "show_page": show_page,
+        "user_name": user_name,
+        "wishlist_ids": wishlist_ids,
+        "wishlist_count": wishlist_count,
     })
     # return render(request,"index.html")
 
@@ -148,41 +175,104 @@ def shop(request):
     return render(request, "shop.html",context)
 def single(request):
     if "user_id" in request.session:
-        user_name=request.session.get("user_name")  
+        user_name = request.session.get("user_name")
     else:
-        user_name="Welcome please Login"
-    id=request.GET.get("product")
+        user_name = "Welcome please Login"
+    id = request.GET.get("product")
     product = Product.objects.order_by('-date').first()
     if id:
         product = get_object_or_404(Product, id=id)
-    related_products=Product.objects.filter(category=product.category)
+    related_products = Product.objects.filter(category=product.category)
     categories = Category.objects.annotate(count=Count("product"))
     contacts=Contact.objects.first()
     colors = Color.objects.annotate(count=Count("product"))
+
+    wishlist_ids, wishlist_count = _wishlist_ids_and_count(request)
     return render(request,"single.html",{
-        "contacts":contacts,
-        "categories":categories,
-        "user_name":user_name,
-        "product":product,
-        "colors":colors,
-        "related_products":related_products
+        "contacts": contacts,
+        "categories": categories,
+        "user_name": user_name,
+        "product": product,
+        "colors": colors,
+        "related_products": related_products,
+        "wishlist_ids": wishlist_ids,
+        "wishlist_count": wishlist_count,
         })
 
 def bestseller(request):
     if "user_id" in request.session:
-        user_name=request.session.get("user_name")  
+        user_name = request.session.get("user_name")
     else:
-        user_name="Welcome please Login"
+        user_name = "Welcome please Login"
     products = Product.objects.order_by(Random())
     contacts = Contact.objects.first()
     categories = Category.objects.annotate(count=Count("product"))
     new_arrivals_products = Product.objects.order_by('-date')[:8]
+
+    wishlist_ids, wishlist_count = _wishlist_ids_and_count(request)
     return render(request, "bestseller.html", {
         "contacts": contacts,
         "products": products,
         "categories": categories,
         "new_arrivals_products": new_arrivals_products,
-        "user_name":user_name
+        "user_name": user_name,
+        "wishlist_ids": wishlist_ids,
+        "wishlist_count": wishlist_count,
+    })
+
+def toggle_wishlist(request, product_id):
+    """Add/remove a product from the logged-in AppUser's wishlist."""
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return redirect("login")
+    try:
+        app_user = AppUser.objects.get(id=user_id)
+    except AppUser.DoesNotExist:
+        request.session.pop("user_id", None)
+        request.session.pop("user_name", None)
+        return redirect("login")
+
+    product = get_object_or_404(Product, id=product_id)
+    wishlist, _ = Wishlist.objects.get_or_create(user=app_user)
+    existing = WishlistItem.objects.filter(wishlist=wishlist, product=product)
+    if existing.exists():
+        existing.delete()
+    else:
+        WishlistItem.objects.create(wishlist=wishlist, product=product)
+
+    # Go back where we came from, or to wishlist page
+    return redirect(request.META.get("HTTP_REFERER") or "wishlist")
+
+
+def wishlist(request):
+    """Show all wishlisted items for the logged-in AppUser."""
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return redirect("login")
+    try:
+        app_user = AppUser.objects.get(id=user_id)
+    except AppUser.DoesNotExist:
+        request.session.pop("user_id", None)
+        request.session.pop("user_name", None)
+        return redirect("login")
+
+    contacts = Contact.objects.first()
+    categories = Category.objects.annotate(count=Count("product"))
+    wishlist_obj = Wishlist.objects.filter(user=app_user).first()
+    if wishlist_obj:
+        items = wishlist_obj.items.select_related("product")
+    else:
+        items = []
+
+    wishlist_ids, wishlist_count = _wishlist_ids_and_count(request)
+
+    return render(request, "wishlist.html", {
+        "contacts": contacts,
+        "categories": categories,
+        "user_name": request.session.get("user_name") or app_user.name,
+        "wishlist_items": items,
+        "wishlist_ids": wishlist_ids,
+        "wishlist_count": wishlist_count,
     })
 
 def _get_cart(request):
@@ -366,127 +456,6 @@ def cart(request):
         "categories": categories,
         "user_name": request.session.get("user_name") or app_user.name,
     })
-# @login_required
-# def add_to_cart(request, product_id):
-#     product = get_object_or_404(Product, id=product_id)
-
-#     cart, created = Cart.objects.get_or_create(user=request.user)
-
-#     cart_item, created = CartItem.objects.get_or_create(
-#         cart=cart,
-#         product=product,
-#         defaults={'price': product.price}
-#     )
-
-#     if not created:
-#         cart_item.quantity += 1
-#         cart_item.save()
-
-#     return redirect('cart')
-# def remove_from_cart(request):
-#     if request.method != 'POST':
-#         return redirect('cart')
-#     try:
-#         index = int(request.POST.get('index', -1))
-#     except ValueError:
-#         return redirect('cart')
-#     cart = _get_cart(request)
-#     if 0 <= index < len(cart):
-#         cart.pop(index)
-#         request.session.modified = True
-#     return redirect('cart')
-
-
-# @login_required
-# def cart(request):
-
-#     categories = Category.objects.annotate(count=Count("product"))
-#     contacts = Contact.objects.first()
-
-#     # Get user's cart
-#     cart, created = Cart.objects.get_or_create(user=request.user)
-
-#     cart_items = cart.items.select_related("product")
-
-#     cart_total = 0
-#     display_items = []
-
-#     for item in cart_items:
-#         total = item.total_price()
-#         cart_total += total
-
-#         display_items.append({
-#             "product": item.product,
-#             "name": item.product.name,
-#             "model": item.product.id,
-#             "price": item.price,
-#             "quantity": item.quantity,
-#             "total": total,
-#         })
-
-#     return render(request, "cart.html", {
-#         "contacts": contacts,
-#         "cart_items": display_items,
-#         "cart_total": cart_total,
-#         "categories": categories,
-#         "user_name": request.user.username
-#     })
-
-# def cart(request):
-#     if "user_id" in request.session:
-#         categories = Category.objects.annotate(count=Count("product"))
-#         contacts=Contact.objects.first()
-#         cart_items = _get_cart(request)
-#         user_name = request.session.get("user_name")
-#         # Only process dict items (ignore corrupted/old session data)
-#         valid_items = [item for item in cart_items if isinstance(item, dict)]
-
-#         # Fetch product objects for items that have product_id
-#         product_ids = [item.get('product_id') for item in valid_items if item.get('product_id')]
-#         products_map = {p.id: p for p in Product.objects.filter(id__in=product_ids)}
-
-#         display_items = []
-#         cart_total = 0
-#         for item in valid_items:
-#             pid = item.get('product_id')
-#             product = products_map.get(pid)
-#             # Derive name/price from product when available
-#             name = item.get('name')
-#             price = item.get('price')
-#             if product:
-#                 if not name:
-#                     name = product.name
-#                 try:
-#                     price = float(product.price)
-#                 except (TypeError, ValueError):
-#                     price = price or 0
-#             else:
-#                 # Fallback if product no longer exists
-#                 product = None
-#                 if price is None:
-#                     price = 0
-
-#             quantity = item.get('quantity', 0)
-#             total = price * quantity
-#             cart_total += total
-
-#             display_items.append({
-#                 "product": product,
-#                 "name": name or "Product",
-#                 "model": pid,
-#                 "price": price,
-#                 "quantity": quantity,
-#                 "total": total,
-#             })
-#         return render(request, "cart.html", {
-#             "contacts": contacts,
-#             'cart_items': display_items,
-#             'cart_total': cart_total,
-#             "categories": categories,
-#             "user_name": user_name
-#         })
-#     else:
-#         return redirect("login")
 
 def cheackout(request):
     if "user_id" in request.session:
