@@ -352,12 +352,29 @@
                     </div>
                     <div class="row g-4">
                         <div class="col-xl-7">
-                            <div class="input-group w-100 mx-auto d-flex">
+                            <form method="GET" action="{% url 'shop' %}">
+                                <div class="input-group w-100 mx-auto d-flex">
+                                    
+                                    <input type="search"
+                                        class="form-control p-3"
+                                        placeholder="keywords"
+                                        name="search">
+                    
+                                    <button type="submit"
+                                        id="search-icon-1"
+                                        class="input-group-text p-3"
+                                        style="border: none;">
+                                        <i class="fa fa-search"></i>
+                                    </button>
+                    
+                                </div>
+                            </form>
+                            {% comment %} <div class="input-group w-100 mx-auto d-flex">
                                 <input type="search" class="form-control p-3" placeholder="keywords"
                                     aria-describedby="search-icon-1">
                                 <span id="search-icon-1" class="input-group-text p-3"><i
                                         class="fa fa-search"></i></span>
-                            </div>
+                            </div> {% endcomment %}
                         </div>
                         <div class="col-xl-3 text-end">
                             <div class="bg-light ps-3 py-3 rounded d-flex justify-content-between">

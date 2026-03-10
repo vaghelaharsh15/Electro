@@ -120,3 +120,13 @@ class WishlistItem(models.Model):
     def __str__(self):
         return f"{self.product.name} in {self.wishlist}"
 
+class Coupon(models.Model):
+    user=models.ForeignKey(AppUser,on_delete=models.CASCADE)
+    name=models.CharField(max_length=30)
+    eligible=models.TextField()
+    price_off=models.PositiveIntegerField()
+    active=models.BooleanField()
+
+    def __str__(self):
+        return self.name
+    

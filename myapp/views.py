@@ -41,7 +41,11 @@ def _filtered_products_context(request):
     color_param = request.GET.get("color") or request.GET.get("color_name")
     min_price = _parse_decimal(request.GET.get("min_price"))
     max_price = _parse_decimal(request.GET.get("max_price"))
-
+    search=request.GET.get("search")
+    
+    if search:
+        products=products.filter(Q(name__icontains=search)|Q(category__name__icontains=search)|Q(brand__name__icontains=search)|Q(color__name__icontains=search))
+    
     # category filter: multiple (checkboxes) or single (links)
     selected_category_ids = set()
     if category_ids:
@@ -140,7 +144,7 @@ def index(request):
     contacts = Contact.objects.first()
     products = Product.objects.all()
     new_arrivals_products = Product.objects.all().order_by('-date')
-    categories = Category.objects.annotate(count=Count("product"))
+    categories = Category.objects.annotate(count=Count("product"))    
     paginator = Paginator(products,12)
     page_number = request.GET.get("page",1)
     if "user_id" in request.session:
@@ -344,7 +348,7 @@ def add_to_cart(request, product_id=None):
     try:
         pid_int = int(pid)
     except (TypeError, ValueError):
-        return redirect("cart")
+        return redirfect("cart")
 
     product = get_object_or_404(Product, id=pid_int)
 
