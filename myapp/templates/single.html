@@ -506,9 +506,11 @@
                                     class="text-primary d-flex align-items-center justify-content-center me-3"><span
                                         class="rounded-circle btn-sm-square border"><i
                                             class="fas fa-random"></i></i></a>
-                                <a href="#"
-                                    class="text-primary d-flex align-items-center justify-content-center me-0"><span
-                                        class="rounded-circle btn-sm-square border"><i class="fas fa-heart"></i></a>
+                                <a href="{% url 'toggle_wishlist' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-0">
+                                    <span class="rounded-circle btn-sm-square border">
+                                        <i class="fas fa-heart {% if i.id in wishlist_ids %}text-danger{% else %}text-muted{% endif %}"></i>
+                                    </span>
+                                </a>
                             </div>
                         </div>
                     </div>

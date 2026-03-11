@@ -12,6 +12,7 @@ import random, time
 from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib.auth.models import User
+from decimal import Decimal
 
 
 
@@ -91,6 +92,7 @@ def _filtered_products_context(request):
     query_string = get_copy.urlencode()
     # Wishlist info for current user
     wishlist_ids, wishlist_count = _wishlist_ids_and_count(request)
+    cart_ids, cart_count = _cart_ids_and_count(request)
 
     return {
         "products": products,
@@ -108,6 +110,8 @@ def _filtered_products_context(request):
         "user_name": user_name,
         "wishlist_ids": wishlist_ids,
         "wishlist_count": wishlist_count,
+        "cart_ids":cart_ids,
+        "cart_count":cart_count
     }
 
 
@@ -132,6 +136,30 @@ def product_list(request):
     # Keep /products/ working; use the existing shop template + filtering sidebar.
     context = _filtered_products_context(request)
     return render(request, "shop.html", context)
+
+def _cart_ids_and_count(request):
+    """Return (product_id_list, count) for the logged-in AppUser's cart."""
+
+    user_id = request.session.get("user_id")
+
+    if not user_id:
+        return [], 0
+
+    try:
+        app_user = AppUser.objects.get(id=user_id)
+    except AppUser.DoesNotExist:
+        return [], 0
+
+    cart = Cart.objects.filter(user=app_user).first()
+
+    if not cart:
+        return [], 0
+
+    ids = list(
+        cart.items.values_list("product_id", flat=True)
+    )
+
+    return ids, len(ids)
 
 
 
@@ -161,6 +189,7 @@ def index(request):
     show_page = paginator.get_elided_page_range(page_number, on_each_side=1, on_ends=1)
 
     wishlist_ids, wishlist_count = _wishlist_ids_and_count(request)
+    cart_ids, cart_count = _cart_ids_and_count(request)
 
     return render(request, "index.html", {
         "contacts": contacts,
@@ -171,6 +200,8 @@ def index(request):
         "user_name": user_name,
         "wishlist_ids": wishlist_ids,
         "wishlist_count": wishlist_count,
+        "cart_count":cart_count,
+        "cart_ids":cart_ids
     })
     # return render(request,"index.html")
 
@@ -192,6 +223,7 @@ def single(request):
     colors = Color.objects.annotate(count=Count("product"))
 
     wishlist_ids, wishlist_count = _wishlist_ids_and_count(request)
+    cart_ids, cart_count = _cart_ids_and_count(request)
     return render(request,"single.html",{
         "contacts": contacts,
         "categories": categories,
@@ -201,6 +233,8 @@ def single(request):
         "related_products": related_products,
         "wishlist_ids": wishlist_ids,
         "wishlist_count": wishlist_count,
+        "cart_count":cart_count,
+        "cart_ids":cart_ids
         })
 
 def bestseller(request):
@@ -214,6 +248,7 @@ def bestseller(request):
     new_arrivals_products = Product.objects.order_by('-date')[:8]
 
     wishlist_ids, wishlist_count = _wishlist_ids_and_count(request)
+    cart_ids, cart_count = _cart_ids_and_count(request)
     return render(request, "bestseller.html", {
         "contacts": contacts,
         "products": products,
@@ -222,6 +257,8 @@ def bestseller(request):
         "user_name": user_name,
         "wishlist_ids": wishlist_ids,
         "wishlist_count": wishlist_count,
+        "cart_count":cart_count,
+        "cart_ids":cart_ids
     })
 
 def toggle_wishlist(request, product_id):
@@ -269,6 +306,7 @@ def wishlist(request):
         items = []
 
     wishlist_ids, wishlist_count = _wishlist_ids_and_count(request)
+    cart_ids, cart_count = _cart_ids_and_count(request)
 
     return render(request, "wishlist.html", {
         "contacts": contacts,
@@ -277,6 +315,8 @@ def wishlist(request):
         "wishlist_items": items,
         "wishlist_ids": wishlist_ids,
         "wishlist_count": wishlist_count,
+        "cart_count":cart_count,
+        "cart_ids":cart_ids
     })
 
 def _get_cart(request):
@@ -448,17 +488,50 @@ def cart(request):
     cart_obj = Cart.objects.filter(user=app_user).first()
     if not cart_obj:
         cart_items = []
-        cart_total = 0
+        cart_total = 0.0
     else:
         cart_items = list(cart_obj.items.select_related("product").all())
         cart_total = sum((ci.total_price() for ci in cart_items), Decimal("0"))
+    total=cart_total
+    coupons = Coupon.objects.all()
+    current_time = timezone.now()
 
+    coupon_list = []
+
+    for coupon in coupons:
+        if coupon.valid_from <= current_time and coupon.valid_to >= current_time and coupon.active and cart_total>coupon.min_ammount:
+            status = "Valid"
+        else:
+            status = "Invalid"
+
+        coupon_list.append({
+            "code": coupon.code,
+            "discount": coupon.discount,
+            "status": status,
+            "min_ammount":coupon.min_ammount
+        })
+    coupon_id = request.session.get("coupon_id")
+    discount=0
+    if coupon_id :
+        coupon=Coupon.objects.get(id=coupon_id)
+        if cart_total > coupon.min_ammount:
+            discount=(Decimal(coupon.discount)/Decimal(100))*cart_total
+    cart_total-=discount  
+    wishlist_ids, wishlist_count = _wishlist_ids_and_count(request)
+    cart_ids, cart_count = _cart_ids_and_count(request)
     return render(request, "cart.html", {
         "contacts": contacts,
         "cart_items": cart_items,
+        "total":total,
         "cart_total": cart_total,
         "categories": categories,
         "user_name": request.session.get("user_name") or app_user.name,
+        "discount":discount,
+        "coupon_list":coupon_list,
+        "wishlist_ids":wishlist_ids,
+        "wishlist_count":wishlist_count,
+        "cart_count":cart_count,
+        "cart_ids":cart_ids
     })
 
 def cheackout(request):
@@ -466,7 +539,9 @@ def cheackout(request):
         contacts=Contact.objects.first()
         user_name=request.session.get("user_name") 
         categories = Category.objects.annotate(count=Count("product"))
-        return render(request,"cheackout.html",{"contacts":contacts,"categories":categories,"user_name":user_name})
+        wishlist_ids, wishlist_count = _wishlist_ids_and_count(request)
+        cart_ids, cart_count = _cart_ids_and_count(request)
+        return render(request,"cheackout.html",{"contacts":contacts,"categories":categories,"user_name":user_name,"wishlist_ids":wishlist_ids,"wishlist_count":wishlist_count,"cart_count":cart_count,"cart_ids":cart_ids})
     else:
         return redirect("login")
 
@@ -476,15 +551,20 @@ def error(request):
     else:
         user_name="Welcome please Login"
     contacts=Contact.objects.first()
+    wishlist_ids, wishlist_count = _wishlist_ids_and_count(request)
     categories = Category.objects.annotate(count=Count("product"))
-    return render(request,"404.html",{"contacts":contacts,"categories":categories,"user_name":user_name})
+    cart_ids, cart_count = _cart_ids_and_count(request)
+    return render(request,"404.html",{"contacts":contacts,"categories":categories,"user_name":user_name,"wishlist_ids": wishlist_ids,
+        "wishlist_count": wishlist_count,"cart_count":cart_count,"cart_ids":cart_ids})
 
 def contact(request):
     if "user_id" in request.session:
         contacts=Contact.objects.first()
         user_name=request.session.get("user_name") 
         categories = Category.objects.annotate(count=Count("product"))
-        return render(request,"contact.html",{"contacts":contacts,"categories":categories,"user_name":user_name})
+        wishlist_ids, wishlist_count = _wishlist_ids_and_count(request)
+        cart_ids, cart_count = _cart_ids_and_count(request)
+        return render(request,"contact.html",{"contacts":contacts,"categories":categories,"user_name":user_name,"wishlist_ids": wishlist_ids,"wishlist_count": wishlist_count,"cart_count":cart_count,"cart_ids":cart_ids})
     else:
         return redirect("login")
 
@@ -662,3 +742,20 @@ def forgot(request):
 
     return render(request, "forgot.html", context)
     
+def apply_coupon(request):
+    if request.method=="POST":
+        code=request.POST.get("code") or request.POST.get("code_select")
+        try:
+            coupon = Coupon.objects.get(
+                code__iexact=code,
+                active=True,
+                valid_from__lte=timezone.now(),
+                valid_to__gte=timezone.now()
+            )
+
+            request.session['coupon_id'] = coupon.id
+
+        except Coupon.DoesNotExist:
+            request.session['coupon_id'] = None
+
+    return redirect('cart')

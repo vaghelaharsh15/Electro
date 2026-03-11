@@ -184,7 +184,7 @@
                     </a>
                     <a href="{% url 'cart' %}" class="text-muted d-flex align-items-center justify-content-center me-3">
                         <span class="rounded-circle btn-md-square border">
-                            <i class="fas fa-shopping-cart"></i>
+                            <i class="fas fa-shopping-cart " ></i>
                         </span>
                     </a>
                     <div class="dropdown">
@@ -618,7 +618,11 @@
                                             </div>
                                             <div class="d-flex">
                                                 <a href="#" class="text-primary d-flex align-items-center justify-content-center me-3"><span class="rounded-circle btn-sm-square border"><i class="fas fa-random"></i></span></a>
-                                                <a href="#" class="text-primary d-flex align-items-center justify-content-center me-0"><span class="rounded-circle btn-sm-square border"><i class="fas fa-heart"></i></span></a>
+                                                <a href="{% url 'toggle_wishlist' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-0">
+                                                    <span class="rounded-circle btn-sm-square border">
+                                                        <i class="fas fa-heart {% if i.id in wishlist_ids %}text-danger{% else %}text-muted{% endif %}"></i>
+                                                    </span>
+                                                </a>
                                             </div>
                                         </div>
                                     </div>
@@ -658,7 +662,11 @@
                                             </div>
                                             <div class="d-flex">
                                                 <a href="#" class="text-primary d-flex align-items-center justify-content-center me-3"><span class="rounded-circle btn-sm-square border"><i class="fas fa-random"></i></span></a>
-                                                <a href="#" class="text-primary d-flex align-items-center justify-content-center me-0"><span class="rounded-circle btn-sm-square border"><i class="fas fa-heart"></i></span></a>
+                                                <a href="{% url 'toggle_wishlist' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-0">
+                                                    <span class="rounded-circle btn-sm-square border">
+                                                        <i class="fas fa-heart {% if i.id in wishlist_ids %}text-danger{% else %}text-muted{% endif %}"></i>
+                                                    </span>
+                                                </a>
                                             </div>
                                         </div>
                                     </div>
@@ -699,7 +707,11 @@
                                             </div>
                                             <div class="d-flex">
                                                 <a href="#" class="text-primary d-flex align-items-center justify-content-center me-3"><span class="rounded-circle btn-sm-square border"><i class="fas fa-random"></i></span></a>
-                                                <a href="#" class="text-primary d-flex align-items-center justify-content-center me-0"><span class="rounded-circle btn-sm-square border"><i class="fas fa-heart"></i></span></a>
+                                                <a href="{% url 'toggle_wishlist' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-0">
+                                                    <span class="rounded-circle btn-sm-square border">
+                                                        <i class="fas fa-heart {% if i.id in wishlist_ids %}text-danger{% else %}text-muted{% endif %}"></i>
+                                                    </span>
+                                                </a>
                                             </div>
                                         </div>
                                     </div>
@@ -784,7 +796,11 @@
                             <a href="{% url 'add_to_cart' i.id %}" class="btn btn-primary border-secondary rounded-pill py-2 px_4 _-btn"><i class="fas fa-shopping-cart me-2"></i> Add To Cart</a>
                             <div class="d-flex">
                                 <a href="#" class="text-primary d-flex align-items-center justify-content-center me-3"><span class="rounded-circle btn-sm-square border"><i class="fas fa-random"></i></span></a>
-                                <a href="#" class="text-primary d-flex align-items-center justify-content-center me-0"><span class="rounded-circle btn-sm-square border"><i class="fas fa-heart"></i></span></a>
+                                <a href="{% url 'toggle_wishlist' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-0">
+                                    <span class="rounded-circle btn-sm-square border">
+                                        <i class="fas fa-heart {% if i.id in wishlist_ids %}text-danger{% else %}text-muted{% endif %}"></i>
+                                    </span>
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -830,7 +846,11 @@
                             <a href="{% url 'add_to_cart' i.id %}" class="btn btn-primary border-secondary rounded-pill py-2 px_4 _-btn"><i class="fas fa-shopping-cart me-2"></i> Add To Cart</a>
                             <div class="d-flex">
                                 <a href="#" class="text-primary d-flex align-items-center justify-content-center me-3"><span class="rounded-circle btn-sm-square border"><i class="fas fa-random"></i></span></a>
-                                <a href="#" class="text-primary d-flex align-items-center justify-content-center me-0"><span class="rounded-circle btn-sm-square border"><i class="fas fa-heart"></i></span></a>
+                                <a href="{% url 'toggle_wishlist' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-0">
+                                    <span class="rounded-circle btn-sm-square border">
+                                        <i class="fas fa-heart {% if i.id in wishlist_ids %}text-danger{% else %}text-muted{% endif %}"></i>
+                                    </span>
+                                </a>
                             </div>
                         </div>
                     </div>
