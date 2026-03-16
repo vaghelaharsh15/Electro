@@ -13,10 +13,12 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib.auth.models import User
 from decimal import Decimal
+from django.contrib import messages
 
 
 
 
+global discount
 def _parse_decimal(value: str | None):
     if value is None:
         return None
@@ -493,6 +495,7 @@ def cart(request):
         cart_items = list(cart_obj.items.select_related("product").all())
         cart_total = sum((ci.total_price() for ci in cart_items), Decimal("0"))
     total=cart_total
+    discount=0
     coupons = Coupon.objects.all()
     current_time = timezone.now()
 
@@ -511,7 +514,8 @@ def cart(request):
             "min_ammount":coupon.min_ammount
         })
     coupon_id = request.session.get("coupon_id")
-    discount=0
+    # discount=0
+    # coupon_selected=re
     if coupon_id :
         coupon=Coupon.objects.get(id=coupon_id)
         if cart_total > coupon.min_ammount:
@@ -535,15 +539,48 @@ def cart(request):
     })
 
 def cheackout(request):
-    if "user_id" in request.session:
-        contacts=Contact.objects.first()
-        user_name=request.session.get("user_name") 
-        categories = Category.objects.annotate(count=Count("product"))
-        wishlist_ids, wishlist_count = _wishlist_ids_and_count(request)
-        cart_ids, cart_count = _cart_ids_and_count(request)
-        return render(request,"cheackout.html",{"contacts":contacts,"categories":categories,"user_name":user_name,"wishlist_ids":wishlist_ids,"wishlist_count":wishlist_count,"cart_count":cart_count,"cart_ids":cart_ids})
-    else:
+    user_id = request.session.get("user_id")
+    if not user_id:
         return redirect("login")
+
+    try:
+        app_user = AppUser.objects.get(id=user_id)
+    except AppUser.DoesNotExist:
+        request.session.pop("user_id", None)
+        request.session.pop("user_name", None)
+        return redirect("login")
+
+    contacts=Contact.objects.first()
+    user_name=request.session.get("user_name") 
+    categories = Category.objects.annotate(count=Count("product"))
+    wishlist_ids, wishlist_count = _wishlist_ids_and_count(request)
+    cart_ids, cart_count = _cart_ids_and_count(request)
+    cart_obj = Cart.objects.filter(user=app_user).first()
+    if not cart_obj:
+        cart_items = []
+        cart_total = 0.0
+    else:
+        cart_items = list(cart_obj.items.select_related("product").all())
+        cart_total = sum((ci.total_price() for ci in cart_items), Decimal("0"))
+    coupon_id = request.session.get("coupon_id")
+    if coupon_id :
+            coupon=Coupon.objects.get(id=coupon_id)
+            if cart_total > coupon.min_ammount:
+                discount=(Decimal(coupon.discount)/Decimal(100))*cart_total
+    return render(request,"cheackout.html",{"contacts":contacts,"categories":categories,
+    "user_name":user_name,"wishlist_ids":wishlist_ids,"wishlist_count":wishlist_count,
+    "cart_count":cart_count,"cart_ids":cart_ids,"cart_items":cart_items,"cart_total":cart_total})
+ 
+ 
+    # if "user_id" in request.session:
+    #     contacts=Contact.objects.first()
+    #     user_name=request.session.get("user_name") 
+    #     categories = Category.objects.annotate(count=Count("product"))
+    #     wishlist_ids, wishlist_count = _wishlist_ids_and_count(request)
+    #     cart_ids, cart_count = _cart_ids_and_count(request)
+    #     return render(request,"cheackout.html",{"contacts":contacts,"categories":categories,"user_name":user_name,"wishlist_ids":wishlist_ids,"wishlist_count":wishlist_count,"cart_count":cart_count,"cart_ids":cart_ids})
+    # else:
+    #     return redirect("login")
 
 def error(request):
     if "user_id" in request.session:
@@ -759,3 +796,26 @@ def apply_coupon(request):
             request.session['coupon_id'] = None
 
     return redirect('cart')
+
+def message(request):
+    user_id=request.session.get("user_id")
+    if request.method=="POST":
+        if user_id:
+            name = request.POST.get("name")
+            email = request.POST.get("email")
+            phone = request.POST.get("phone")
+            project = request.POST.get("project")
+            subject = request.POST.get("subject")
+            message = request.POST.get("message")
+            user_id=request.session["user_id"]
+            user=AppUser.objects.get(id=user_id)
+            ContactMsg.objects.create(name=name,email=email,phone=phone,project=project,subject=subject,message=message,user=user)
+            messages.success(request,"Message sent successfully")
+            return redirect("contact")
+        else:
+            messages.error(request,"Message doesnt sent")
+            return redirect("login")
+    else:
+        return redirect("contact")
+
+

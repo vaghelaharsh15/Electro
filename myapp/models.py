@@ -141,4 +141,19 @@ class Coupon(models.Model):
 
     def __str__(self):
         return self.code
+
+
+class ContactMsg(models.Model):
+    name = models.CharField(max_length=200)
+    email = models.EmailField()
+    phone = models.CharField(max_length=15)
+    project = models.CharField(max_length=200)
+    subject = models.CharField(max_length=255)
+    message = models.TextField()
+    user=models.ForeignKey(AppUser,on_delete=models.CASCADE,null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
     

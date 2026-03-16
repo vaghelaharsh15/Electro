@@ -158,32 +158,25 @@
                                 <thead>
                                     <tr class="text-center">
                                         <th scope="col" class="text-start">Name</th>
-                                        <th scope="col">Model</th>
+                                        <th scope="col">Brand</th>
                                         <th scope="col">Price</th>
                                         <th scope="col">Quantity</th>
                                         <th scope="col">Total</th>
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    {% for i in cart_items %}
                                     <tr class="text-center">
                                         <th scope="row" class="text-start py-4">
-                                            Apple iPad Mini
+                                            {{i.product.name}}
                                         </th>
-                                        <td class="py-4">G2356</td>
-                                        <td class="py-4">$269.00</td>
-                                        <td class="py-4 text-center">2</td>
-                                        <td class="py-4">$538.00</td>
+                                        <td class="py-4">{{i.product.brand}}</td>
+                                        <td class="py-4">{{i.price}}</td>
+                                        <td class="py-4 text-center">{{i.quantity}}</td>
+                                        <td class="py-4">{{i.total_price}}</td>
                                     </tr>
-                                    <tr class="text-center">
-                                        <th scope="row" class="text-start py-4">
-                                            Apple iPad Mini
-                                        </th>
-                                        <td class="py-4">G2356</td>
-                                        <td class="py-4">$269.00</td>
-                                        <td class="py-4">2</td>
-                                        <td class="py-4">$538.00</td>
-                                    </tr>
-                                    <tr class="text-center">
+                                    {% endfor %}
+                                    {% comment %} <tr class="text-center">
                                         <th scope="row" class="text-start py-4">
                                             Apple iPad Mini
                                         </th>
@@ -210,7 +203,16 @@
                                         <td class="py-4">2</td>
                                         <td class="py-4">$538.00</td>
                                     </tr>
-                                    <tr>
+                                    <tr class="text-center">
+                                        <th scope="row" class="text-start py-4">
+                                            Apple iPad Mini
+                                        </th>
+                                        <td class="py-4">G2356</td>
+                                        <td class="py-4">$269.00</td>
+                                        <td class="py-4">2</td>
+                                        <td class="py-4">$538.00</td>
+                                    </tr>
+                                    <tr> {% endcomment %}
                                         <th scope="row">
                                         </th>
                                         <td class="py-4"></td>
@@ -220,7 +222,7 @@
                                         </td>
                                         <td class="py-4">
                                             <div class="py-2 text-center border-bottom border-top">
-                                                <p class="mb-0 text-dark">$1134.00</p>
+                                                <p class="mb-0 text-dark">{{cart_total}}</p>
                                             </div>
                                         </td>
                                     </tr>
@@ -232,18 +234,18 @@
                                         </td>
                                         <td colspan="3" class="py-4">
                                             <div class="form-check text-start">
-                                                <input type="checkbox" class="form-check-input bg-primary border-0"
+                                                <input type="radio" class="form-check-input bg-primary border-0"
                                                     id="Shipping-1" name="Shipping-1" value="Shipping">
                                                 <label class="form-check-label" for="Shipping-1">Free Shipping</label>
                                             </div>
                                             <div class="form-check text-start">
-                                                <input type="checkbox" class="form-check-input bg-primary border-0"
+                                                <input type="radio" class="form-check-input bg-primary border-0"
                                                     id="Shipping-2" name="Shipping-1" value="Shipping">
                                                 <label class="form-check-label" for="Shipping-2">Flat rate:
                                                     $15.00</label>
                                             </div>
                                             <div class="form-check text-start">
-                                                <input type="checkbox" class="form-check-input bg-primary border-0"
+                                                <input type="radio" class="form-check-input bg-primary border-0"
                                                     id="Shipping-3" name="Shipping-1" value="Shipping">
                                                 <label class="form-check-label" for="Shipping-3">Local Pickup:
                                                     $8.00</label>
@@ -270,7 +272,7 @@
                         <div class="row g-0 text-center align-items-center justify-content-center border-bottom py-2">
                             <div class="col-12">
                                 <div class="form-check text-start my-2">
-                                    <input type="checkbox" class="form-check-input bg-primary border-0" id="Transfer-1"
+                                    <input type="radio" class="form-check-input bg-primary border-0" id="Transfer-1"
                                         name="Transfer" value="Transfer">
                                     <label class="form-check-label" for="Transfer-1">Direct Bank Transfer</label>
                                 </div>
@@ -282,7 +284,7 @@
                         <div class="row g-4 text-center align-items-center justify-content-center border-bottom py-2">
                             <div class="col-12">
                                 <div class="form-check text-start my-2">
-                                    <input type="checkbox" class="form-check-input bg-primary border-0" id="Payments-1"
+                                    <input type="radio" class="form-check-input bg-primary border-0" id="Payments-1"
                                         name="Payments" value="Payments">
                                     <label class="form-check-label" for="Payments-1">Check Payments</label>
                                 </div>
@@ -291,7 +293,7 @@
                         <div class="row g-4 text-center align-items-center justify-content-center border-bottom py-2">
                             <div class="col-12">
                                 <div class="form-check text-start my-2">
-                                    <input type="checkbox" class="form-check-input bg-primary border-0" id="Delivery-1"
+                                    <input type="radio" class="form-check-input bg-primary border-0" id="Delivery-1"
                                         name="Delivery" value="Delivery">
                                     <label class="form-check-label" for="Delivery-1">Cash On Delivery</label>
                                 </div>
@@ -300,7 +302,7 @@
                         <div class="row g-4 text-center align-items-center justify-content-center border-bottom py-2">
                             <div class="col-12">
                                 <div class="form-check text-start my-2">
-                                    <input type="checkbox" class="form-check-input bg-primary border-0" id="Paypal-1"
+                                    <input type="radio" class="form-check-input bg-primary border-0" id="Paypal-1"
                                         name="Paypal" value="Paypal">
                                     <label class="form-check-label" for="Paypal-1">Paypal</label>
                                 </div>
