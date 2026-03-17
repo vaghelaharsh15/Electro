@@ -120,6 +120,26 @@ class WishlistItem(models.Model):
     def __str__(self):
         return f"{self.product.name} in {self.wishlist}"
 
+
+class CompareList(models.Model):
+    user = models.ForeignKey(AppUser, on_delete=models.CASCADE, related_name="compare_lists")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"CompareList of {self.user.name}"
+
+
+class CompareItem(models.Model):
+    compare_list = models.ForeignKey(CompareList, on_delete=models.CASCADE, related_name="items")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("compare_list", "product")
+
+    def __str__(self):
+        return f"{self.product.name} in compare"
+
 # class Coupon(models.Model):
 #     user=models.ForeignKey(AppUser,on_delete=models.CASCADE)
 #     name=models.CharField(max_length=30)

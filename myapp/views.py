@@ -17,8 +17,8 @@ from django.contrib import messages
 
 
 
-
 global discount
+
 def _parse_decimal(value: str | None):
     if value is None:
         return None
@@ -95,6 +95,7 @@ def _filtered_products_context(request):
     # Wishlist info for current user
     wishlist_ids, wishlist_count = _wishlist_ids_and_count(request)
     cart_ids, cart_count = _cart_ids_and_count(request)
+    compare_ids, compare_count = _compare_ids_and_count(request)
 
     return {
         "products": products,
@@ -113,7 +114,9 @@ def _filtered_products_context(request):
         "wishlist_ids": wishlist_ids,
         "wishlist_count": wishlist_count,
         "cart_ids":cart_ids,
-        "cart_count":cart_count
+        "cart_count":cart_count,
+        "compare_ids": compare_ids,
+        "compare_count": compare_count,
     }
 
 
@@ -132,6 +135,22 @@ def _wishlist_ids_and_count(request):
     ids = list(
         wishlist.items.values_list("product_id", flat=True)
     )
+    return ids, len(ids)
+
+
+def _compare_ids_and_count(request):
+    """Return (product_id_list, count) for the logged-in AppUser's compare list."""
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return [], 0
+    try:
+        app_user = AppUser.objects.get(id=user_id)
+    except AppUser.DoesNotExist:
+        return [], 0
+    cl = CompareList.objects.filter(user=app_user).first()
+    if not cl:
+        return [], 0
+    ids = list(cl.items.values_list("product_id", flat=True))
     return ids, len(ids)
 
 def product_list(request):
@@ -192,6 +211,7 @@ def index(request):
 
     wishlist_ids, wishlist_count = _wishlist_ids_and_count(request)
     cart_ids, cart_count = _cart_ids_and_count(request)
+    compare_ids, compare_count = _compare_ids_and_count(request)
 
     return render(request, "index.html", {
         "contacts": contacts,
@@ -203,7 +223,9 @@ def index(request):
         "wishlist_ids": wishlist_ids,
         "wishlist_count": wishlist_count,
         "cart_count":cart_count,
-        "cart_ids":cart_ids
+        "cart_ids":cart_ids,
+        "compare_ids": compare_ids,
+        "compare_count": compare_count,
     })
     # return render(request,"index.html")
 
@@ -226,6 +248,7 @@ def single(request):
 
     wishlist_ids, wishlist_count = _wishlist_ids_and_count(request)
     cart_ids, cart_count = _cart_ids_and_count(request)
+    compare_ids, compare_count = _compare_ids_and_count(request)
     return render(request,"single.html",{
         "contacts": contacts,
         "categories": categories,
@@ -236,7 +259,9 @@ def single(request):
         "wishlist_ids": wishlist_ids,
         "wishlist_count": wishlist_count,
         "cart_count":cart_count,
-        "cart_ids":cart_ids
+        "cart_ids":cart_ids,
+        "compare_ids": compare_ids,
+        "compare_count": compare_count,
         })
 
 def bestseller(request):
@@ -251,6 +276,7 @@ def bestseller(request):
 
     wishlist_ids, wishlist_count = _wishlist_ids_and_count(request)
     cart_ids, cart_count = _cart_ids_and_count(request)
+    compare_ids, compare_count = _compare_ids_and_count(request)
     return render(request, "bestseller.html", {
         "contacts": contacts,
         "products": products,
@@ -260,7 +286,9 @@ def bestseller(request):
         "wishlist_ids": wishlist_ids,
         "wishlist_count": wishlist_count,
         "cart_count":cart_count,
-        "cart_ids":cart_ids
+        "cart_ids":cart_ids,
+        "compare_ids": compare_ids,
+        "compare_count": compare_count,
     })
 
 def toggle_wishlist(request, product_id):
@@ -309,6 +337,7 @@ def wishlist(request):
 
     wishlist_ids, wishlist_count = _wishlist_ids_and_count(request)
     cart_ids, cart_count = _cart_ids_and_count(request)
+    compare_ids, compare_count = _compare_ids_and_count(request)
 
     return render(request, "wishlist.html", {
         "contacts": contacts,
@@ -318,7 +347,70 @@ def wishlist(request):
         "wishlist_ids": wishlist_ids,
         "wishlist_count": wishlist_count,
         "cart_count":cart_count,
-        "cart_ids":cart_ids
+        "cart_ids":cart_ids,
+        "compare_ids": compare_ids,
+        "compare_count": compare_count,
+    })
+
+
+def toggle_compare(request, product_id):
+    """Toggle a product in compare list (max 3) for logged-in AppUser."""
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return redirect("login")
+    try:
+        app_user = AppUser.objects.get(id=user_id)
+    except AppUser.DoesNotExist:
+        request.session.pop("user_id", None)
+        request.session.pop("user_name", None)
+        return redirect("login")
+
+    product = get_object_or_404(Product, id=product_id)
+    cl, _ = CompareList.objects.get_or_create(user=app_user)
+    existing = CompareItem.objects.filter(compare_list=cl, product=product)
+    if existing.exists():
+        existing.delete()
+    else:
+        if cl.items.count() >= 3:
+            return redirect(request.META.get("HTTP_REFERER") or "compare")
+        CompareItem.objects.create(compare_list=cl, product=product)
+
+    return redirect(request.META.get("HTTP_REFERER") or "compare")
+
+
+def compare(request):
+    """Compare up to 3 products for the logged-in AppUser."""
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return redirect("login")
+    try:
+        app_user = AppUser.objects.get(id=user_id)
+    except AppUser.DoesNotExist:
+        request.session.pop("user_id", None)
+        request.session.pop("user_name", None)
+        return redirect("login")
+
+    contacts = Contact.objects.first()
+    categories = Category.objects.annotate(count=Count("product"))
+
+    cl = CompareList.objects.filter(user=app_user).first()
+    compare_products = [it.product for it in cl.items.select_related("product")] if cl else []
+
+    wishlist_ids, wishlist_count = _wishlist_ids_and_count(request)
+    compare_ids, compare_count = _compare_ids_and_count(request)
+    cart_ids, cart_count = _cart_ids_and_count(request)
+
+    return render(request, "compare.html", {
+        "contacts": contacts,
+        "categories": categories,
+        "user_name": request.session.get("user_name") or app_user.name,
+        "compare_products": compare_products,
+        "compare_ids": compare_ids,
+        "compare_count": compare_count,
+        "wishlist_ids": wishlist_ids,
+        "wishlist_count": wishlist_count,
+        "cart_ids": cart_ids,
+        "cart_count": cart_count,
     })
 
 def _get_cart(request):
@@ -390,7 +482,7 @@ def add_to_cart(request, product_id=None):
     try:
         pid_int = int(pid)
     except (TypeError, ValueError):
-        return redirfect("cart")
+        return redirect("cart")
 
     product = get_object_or_404(Product, id=pid_int)
 
@@ -563,13 +655,18 @@ def cheackout(request):
         cart_items = list(cart_obj.items.select_related("product").all())
         cart_total = sum((ci.total_price() for ci in cart_items), Decimal("0"))
     coupon_id = request.session.get("coupon_id")
+    discount=0
     if coupon_id :
             coupon=Coupon.objects.get(id=coupon_id)
             if cart_total > coupon.min_ammount:
                 discount=(Decimal(coupon.discount)/Decimal(100))*cart_total
+    # if request.method=="POST":
+    # shipping=request.POST.g
+    # shipping=int(request.POST.get("shipping","value"))
+    total=cart_total-discount
     return render(request,"cheackout.html",{"contacts":contacts,"categories":categories,
     "user_name":user_name,"wishlist_ids":wishlist_ids,"wishlist_count":wishlist_count,
-    "cart_count":cart_count,"cart_ids":cart_ids,"cart_items":cart_items,"cart_total":cart_total})
+    "cart_count":cart_count,"cart_ids":cart_ids,"cart_items":cart_items,"cart_total":cart_total,"total":total})
  
  
     # if "user_id" in request.session:

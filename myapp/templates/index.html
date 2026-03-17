@@ -167,9 +167,14 @@
             </div>
             <div class="col-md-4 col-lg-3 text-center text-lg-end">
                 <div class="d-inline-flex align-items-center">
-                    <a href="#" class="text-muted d-flex align-items-center justify-content-center me-3">
-                        <span class="rounded-circle btn-md-square border">
-                            <i class="fas fa-random"></i>
+                    <a href="{% url 'compare' %}" class="text-muted d-flex align-items-center justify-content-center me-3">
+                        <span class="rounded-circle btn-md-square border position-relative">
+                            <i class="fas fa-random {% if compare_count %}text-primary{% endif %}"></i>
+                            {% if compare_count %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary">
+                                {{ compare_count }}
+                            </span>
+                            {% endif %}
                         </span>
                     </a>
                     <a href="{% url 'wishlist' %}" class="text-muted d-flex align-items-center justify-content-center me-3">
@@ -531,8 +536,10 @@
                                                 <i class="fas fa-star"></i>
                                             </div>
                                             <div class="d-flex">
-                                                <a href="#" class="text-primary d-flex align-items-center justify-content-center me-3">
-                                                    <span class="rounded-circle btn-sm-square border"><i class="fas fa-random"></i></span>
+                                                <a href="{% url 'toggle_compare' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-3">
+                                                    <span class="rounded-circle btn-sm-square border">
+                                                        <i class="fas fa-random {% if i.id in compare_ids %}text-primary{% else %}text-muted{% endif %}"></i>
+                                                    </span>
                                                 </a>
                                                 <a href="{% url 'toggle_wishlist' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-0">
                                                     <span class="rounded-circle btn-sm-square border">
@@ -617,7 +624,12 @@
                                                 <i class="fas fa-star"></i>
                                             </div>
                                             <div class="d-flex">
-                                                <a href="#" class="text-primary d-flex align-items-center justify-content-center me-3"><span class="rounded-circle btn-sm-square border"><i class="fas fa-random"></i></span></a>
+                                                <a href="{% url 'toggle_compare' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-3">
+                                                    <span class="rounded-circle btn-sm-square border">
+                                                        <i class="fas fa-random {% if i.id in compare_ids %}text-primary{% else %}text-muted{% endif %}"></i>
+                                                    </span>
+                                                </a>
+                                                {% comment %} <a href="#" class="text-primary d-flex align-items-center justify-content-center me-3"><span class="rounded-circle btn-sm-square border"><i class="fas fa-random"></i></span></a> {% endcomment %}
                                                 <a href="{% url 'toggle_wishlist' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-0">
                                                     <span class="rounded-circle btn-sm-square border">
                                                         <i class="fas fa-heart {% if i.id in wishlist_ids %}text-danger{% else %}text-muted{% endif %}"></i>
@@ -661,7 +673,12 @@
                                                 <i class="fas fa-star"></i>
                                             </div>
                                             <div class="d-flex">
-                                                <a href="#" class="text-primary d-flex align-items-center justify-content-center me-3"><span class="rounded-circle btn-sm-square border"><i class="fas fa-random"></i></span></a>
+                                                <a href="{% url 'toggle_compare' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-3">
+                                                    <span class="rounded-circle btn-sm-square border">
+                                                        <i class="fas fa-random {% if i.id in compare_ids %}text-primary{% else %}text-muted{% endif %}"></i>
+                                                    </span>
+                                                </a>
+                                                {% comment %} <a href="#" class="text-primary d-flex align-items-center justify-content-center me-3"><span class="rounded-circle btn-sm-square border"><i class="fas fa-random"></i></span></a> {% endcomment %}
                                                 <a href="{% url 'toggle_wishlist' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-0">
                                                     <span class="rounded-circle btn-sm-square border">
                                                         <i class="fas fa-heart {% if i.id in wishlist_ids %}text-danger{% else %}text-muted{% endif %}"></i>
@@ -706,7 +723,12 @@
                                                 <i class="fas fa-star"></i>
                                             </div>
                                             <div class="d-flex">
-                                                <a href="#" class="text-primary d-flex align-items-center justify-content-center me-3"><span class="rounded-circle btn-sm-square border"><i class="fas fa-random"></i></span></a>
+                                                <a href="{% url 'toggle_compare' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-3">
+                                                    <span class="rounded-circle btn-sm-square border">
+                                                        <i class="fas fa-random {% if i.id in compare_ids %}text-primary{% else %}text-muted{% endif %}"></i>
+                                                    </span>
+                                                </a>
+                                                {% comment %} <a href="#" class="text-primary d-flex align-items-center justify-content-center me-3"><span class="rounded-circle btn-sm-square border"><i class="fas fa-random"></i></span></a> {% endcomment %}
                                                 <a href="{% url 'toggle_wishlist' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-0">
                                                     <span class="rounded-circle btn-sm-square border">
                                                         <i class="fas fa-heart {% if i.id in wishlist_ids %}text-danger{% else %}text-muted{% endif %}"></i>
@@ -770,14 +792,14 @@
                     data-wow-delay="0.1s">Products</h4>
                 <h1 class="mb-0 display-3 wow fadeInUp" data-wow-delay="0.3s">All Product Items</h1>
             </div>
-            <div class="productList-carousel owl-carousel pt-4 wow fadeInUp" data-wow-delay="0.3s">
+            <div class="productList-carousel owl-carousel wow fadeInUp" data-wow-delay="0.3s">
+                {% for i in products  %}
                 <div class="productImg-carousel owl-carousel productList-item">
-                    {% for i in products %}
-                    <div class="productImg-item products-mini-item border" data-product-name="{{ i.name }}" data-product-price="{{ i.price }}" data-product-model="{{ i.id }}">
+                    <div class="productImg-item products-mini-item border">
                         <div class="row g-0">
                             <div class="col-5">
                                 <div class="products-mini-img border-end h-100">
-                                    <img src="{{ i.product_image.url }}" class="img-fluid w-100 h-100" alt="Image">
+                                    <img src="{{i.product_image.url}}" class="img-fluid w-100 h-100" alt="Image">
                                     <div class="products-mini-icon rounded-circle bg-primary">
                                         <a href="{% url "single" %}?product={{i.id}}"><i class="fa fa-eye fa-1x text-white"></i></a>
                                     </div>
@@ -785,27 +807,35 @@
                             </div>
                             <div class="col-7">
                                 <div class="products-mini-content p-3">
-                                    <a href="#" class="d-block mb-2">{{ i.category.name }}</a>
-                                    <a href="#" class="d-block h4">{{ i.product_name }}</a>
-                                    <del class="me-2 fs-5">₹ {{ i.price|add:2000 }}</del>
-                                    <span class="text-primary fs-5">₹ {{ i.price }}</span>
+                                    <a href="#" class="d-block mb-2">{{i.category.name}}</a>
+                                    <a href="#" class="d-block h4">{{i.product_name}}</a>
+                                    <del class="me-2 fs-5">{{i.price|add:2000}}</del>
+                                    <span class="text-primary fs-5">{{i.price}}</span>
                                 </div>
                             </div>
                         </div>
                         <div class="products-mini-add border p-3">
-                            <a href="{% url 'add_to_cart' i.id %}" class="btn btn-primary border-secondary rounded-pill py-2 px_4 _-btn"><i class="fas fa-shopping-cart me-2"></i> Add To Cart</a>
+                            <a href="{% url 'add_to_cart' i.id %}" class="btn btn-primary border-secondary rounded-pill py-2 px-4 add_to_cart-btn"><i
+                                    class="fas fa-shopping-cart me-2"></i> Add To Cart</a>
                             <div class="d-flex">
-                                <a href="#" class="text-primary d-flex align-items-center justify-content-center me-3"><span class="rounded-circle btn-sm-square border"><i class="fas fa-random"></i></span></a>
-                                <a href="{% url 'toggle_wishlist' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-0">
+                                <a href="{% url 'toggle_compare' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-3">
                                     <span class="rounded-circle btn-sm-square border">
-                                        <i class="fas fa-heart {% if i.id in wishlist_ids %}text-danger{% else %}text-muted{% endif %}"></i>
+                                        <i class="fas fa-random {% if i.id in compare_ids %}text-primary{% else %}text-muted{% endif %}"></i>
                                     </span>
                                 </a>
+                                {% comment %} <a href="#"
+                                    class="text-primary d-flex align-items-center justify-content-center me-3"><span
+                                        class="rounded-circle btn-sm-square border"><i
+                                            class="fas fa-random"></i></i></a> {% endcomment %}
+                                <a href="{% url 'toggle_wishlist' i.id %}"
+                                class="text-primary d-flex align-items-center justify-content-center me-0"><span
+                                    class="rounded-circle btn-sm-square border"><i class="fas fa-heart {% if i.id in wishlist_ids %}text-danger{% else %}text-muted{% endif %}"></i></span></a>
                             </div>
                         </div>
                     </div>
-                    {% endfor %}
                 </div>
+                {% endfor %}
+                
             </div>
         </div>
     </div>
@@ -845,7 +875,12 @@
                         <div class="products-mini-add border p-3">
                             <a href="{% url 'add_to_cart' i.id %}" class="btn btn-primary border-secondary rounded-pill py-2 px_4 _-btn"><i class="fas fa-shopping-cart me-2"></i> Add To Cart</a>
                             <div class="d-flex">
-                                <a href="#" class="text-primary d-flex align-items-center justify-content-center me-3"><span class="rounded-circle btn-sm-square border"><i class="fas fa-random"></i></span></a>
+                                <a href="{% url 'toggle_compare' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-3">
+                                    <span class="rounded-circle btn-sm-square border">
+                                        <i class="fas fa-random {% if i.id in compare_ids %}text-primary{% else %}text-muted{% endif %}"></i>
+                                    </span>
+                                </a>
+                                {% comment %} <a href="#" class="text-primary d-flex align-items-center justify-content-center me-3"><span class="rounded-circle btn-sm-square border"><i class="fas fa-random"></i></span></a> {% endcomment %}
                                 <a href="{% url 'toggle_wishlist' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-0">
                                     <span class="rounded-circle btn-sm-square border">
                                         <i class="fas fa-heart {% if i.id in wishlist_ids %}text-danger{% else %}text-muted{% endif %}"></i>
@@ -933,12 +968,12 @@
                 <div class="col-md-6 col-lg-6 col-xl-3">
                     <div class="footer-item d-flex flex-column">
                         <h4 class="text-primary mb-4">Customer Service</h4>
-                        <a href="#" class=""><i class="fas fa-angle-right me-2"></i> Contact Us</a>
+                        <a href="{%url "contact"%}" class=""><i class="fas fa-angle-right me-2"></i> Contact Us</a>
                         <a href="#" class=""><i class="fas fa-angle-right me-2"></i> Returns</a>
                         <a href="#" class=""><i class="fas fa-angle-right me-2"></i> Order History</a>
-                        <a href="#" class=""><i class="fas fa-angle-right me-2"></i> Site Map</a>
+                        <a href="{%url "contact"%}" class=""><i class="fas fa-angle-right me-2"></i> Site Map</a>
                         <a href="#" class=""><i class="fas fa-angle-right me-2"></i> Testimonials</a>
-                        <a href="#" class=""><i class="fas fa-angle-right me-2"></i> My Account</a>
+                        <a href="{%url "profile"%}" class=""><i class="fas fa-angle-right me-2"></i> My Account</a>
                         <a href="#" class=""><i class="fas fa-angle-right me-2"></i> Unsubscribe Notification</a>
                     </div>
                 </div>
@@ -960,7 +995,7 @@
                         <a href="#" class=""><i class="fas fa-angle-right me-2"></i> Brands</a>
                         <a href="#" class=""><i class="fas fa-angle-right me-2"></i> Gift Vouchers</a>
                         <a href="#" class=""><i class="fas fa-angle-right me-2"></i> Affiliates</a>
-                        <a href="#" class=""><i class="fas fa-angle-right me-2"></i> Wishlist</a>
+                        <a href="{%url "wishlist"%}" class=""><i class="fas fa-angle-right me-2"></i> Wishlist</a>
                         <a href="#" class=""><i class="fas fa-angle-right me-2"></i> Order History</a>
                         <a href="#" class=""><i class="fas fa-angle-right me-2"></i> Track Your Order</a>
                         <a href="#" class=""><i class="fas fa-angle-right me-2"></i> Track Your Order</a>
