@@ -176,4 +176,54 @@ class ContactMsg(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Order(models.Model):
+    STATUS_PENDING = "pending"
+    STATUS_PAID = "paid"
+    STATUS_FAILED = "failed"
+    STATUS_CHOICES = [
+        (STATUS_PENDING, "Pending"),
+        (STATUS_PAID, "Paid"),
+        (STATUS_FAILED, "Failed"),
+    ]
+
+    user = models.ForeignKey(AppUser, on_delete=models.CASCADE, related_name="orders")
+
+    first_name = models.CharField(max_length=120)
+    last_name = models.CharField(max_length=120, blank=True)
+    company_name = models.CharField(max_length=200, blank=True)
+    address = models.CharField(max_length=255)
+    city = models.CharField(max_length=120)
+    country = models.CharField(max_length=120)
+    postcode = models.CharField(max_length=30)
+    mobile = models.CharField(max_length=20)
+    email = models.EmailField()
+    order_notes = models.TextField(blank=True)
+
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    discount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    shipping = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    razorpay_order_id = models.CharField(max_length=100, blank=True)
+    razorpay_payment_id = models.CharField(max_length=100, blank=True)
+    razorpay_signature = models.CharField(max_length=255, blank=True)
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Order #{self.id} ({self.status})"
+
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    quantity = models.PositiveIntegerField(default=1)
+    price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    def __str__(self):
+        return f"OrderItem(order={self.order_id}, product={self.product_id})"
     

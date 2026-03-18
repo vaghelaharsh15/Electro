@@ -14,6 +14,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from decimal import Decimal
 from django.contrib import messages
+import razorpay
 
 
 
@@ -650,23 +651,194 @@ def cheackout(request):
     cart_obj = Cart.objects.filter(user=app_user).first()
     if not cart_obj:
         cart_items = []
-        cart_total = 0.0
+        raw_subtotal = Decimal("0")
     else:
         cart_items = list(cart_obj.items.select_related("product").all())
-        cart_total = sum((ci.total_price() for ci in cart_items), Decimal("0"))
+        # Always compute from backend product price for consistency
+        raw_subtotal = sum((Decimal(str(ci.product.price)) * Decimal(ci.quantity) for ci in cart_items), Decimal("0"))
+        # Keep CartItem.price in sync with product price (so templates using ci.price are correct)
+        for ci in cart_items:
+            if ci.price != ci.product.price:
+                ci.price = ci.product.price
+                ci.save(update_fields=["price"])
     coupon_id = request.session.get("coupon_id")
-    discount=0
-    if coupon_id :
-            coupon=Coupon.objects.get(id=coupon_id)
-            if cart_total > coupon.min_ammount:
-                discount=(Decimal(coupon.discount)/Decimal(100))*cart_total
+    discount = Decimal("0")
+    if coupon_id:
+        coupon = Coupon.objects.get(id=coupon_id)
+        if raw_subtotal > Decimal(str(coupon.min_ammount or 0)):
+            discount = (Decimal(str(coupon.discount)) / Decimal("100")) * raw_subtotal
     # if request.method=="POST":
     # shipping=request.POST.g
     # shipping=int(request.POST.get("shipping","value"))
-    total=cart_total-discount
-    return render(request,"cheackout.html",{"contacts":contacts,"categories":categories,
-    "user_name":user_name,"wishlist_ids":wishlist_ids,"wishlist_count":wishlist_count,
-    "cart_count":cart_count,"cart_ids":cart_ids,"cart_items":cart_items,"cart_total":cart_total,"total":total})
+    subtotal = raw_subtotal
+    subtotal_after_discount = subtotal - discount
+    # Match cart page shipping rule: free over 10000, else flat 200
+    shipping_fee = Decimal("0") if subtotal_after_discount > Decimal("10000") else Decimal("200")
+    total_payable = subtotal_after_discount + shipping_fee
+
+    # Billing form + order creation happens on Place Order (POST)
+    errors = {}
+    created_order = None
+    razorpay_order_id = ""
+    razorpay_currency = "INR"
+    amount_paise = 0
+
+    if request.method == "POST":
+        first_name = (request.POST.get("first_name") or "").strip()
+        last_name = (request.POST.get("last_name") or "").strip()
+        company_name = (request.POST.get("company_name") or "").strip()
+        address = (request.POST.get("address") or "").strip()
+        city = (request.POST.get("city") or "").strip()
+        country = (request.POST.get("country") or "").strip()
+        postcode = (request.POST.get("postcode") or "").strip()
+        mobile = (request.POST.get("mobile") or "").strip()
+        email = (request.POST.get("email") or "").strip()
+        order_notes = (request.POST.get("order_notes") or "").strip()
+        # Shipping is derived (same rule as cart), not user-entered
+        shipping = shipping_fee
+
+        if not first_name:
+            errors["first_name"] = "First name is required."
+        if not address:
+            errors["address"] = "Address is required."
+        if not city:
+            errors["city"] = "City is required."
+        if not country:
+            errors["country"] = "Country is required."
+        if not postcode:
+            errors["postcode"] = "Postcode is required."
+        if not mobile:
+            errors["mobile"] = "Mobile is required."
+        if not email:
+            errors["email"] = "Email is required."
+        if not cart_items:
+            errors["cart"] = "Your cart is empty."
+
+        if not errors:
+            discount_amount = discount
+            total_with_shipping = total_payable
+
+            created_order = Order.objects.create(
+                user=app_user,
+                first_name=first_name,
+                last_name=last_name,
+                company_name=company_name,
+                address=address,
+                city=city,
+                country=country,
+                postcode=postcode,
+                mobile=mobile,
+                email=email,
+                order_notes=order_notes,
+                subtotal=subtotal,
+                discount=discount_amount,
+                shipping=shipping,
+                total=total_with_shipping,
+                status=Order.STATUS_PENDING,
+            )
+
+            for ci in cart_items:
+                line_total = Decimal(str(ci.product.price)) * Decimal(ci.quantity)
+                OrderItem.objects.create(
+                    order=created_order,
+                    product=ci.product,
+                    quantity=ci.quantity,
+                    price=ci.product.price,
+                    total=line_total,
+                )
+
+            # Create Razorpay order (amount in paise)
+            amount_paise = int(total_with_shipping * 100)
+            if amount_paise < 1:
+                amount_paise = 1
+            client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+            rp_order = client.order.create({
+                "amount": amount_paise,
+                "currency": "INR",
+                "payment_capture": 1,
+                "receipt": f"order_{created_order.id}",
+            })
+            razorpay_order_id = rp_order.get("id", "")
+            razorpay_currency = rp_order.get("currency", "INR")
+
+            created_order.razorpay_order_id = razorpay_order_id
+            created_order.save(update_fields=["razorpay_order_id"])
+
+            # store last order in session (optional)
+            request.session["last_order_id"] = created_order.id
+
+    context = {
+        "contacts": contacts,
+        "categories": categories,
+        "user_name": user_name,
+        "wishlist_ids": wishlist_ids,
+        "wishlist_count": wishlist_count,
+        "cart_count": cart_count,
+        "cart_ids": cart_ids,
+        "user_id": user_id,
+        "cart_items": cart_items,
+        "cart_total": subtotal_after_discount,
+        "subtotal": subtotal,
+        "discount": discount,
+        "shipping_fee": shipping_fee,
+        "total": total_payable,
+        "app_user": app_user,
+        # Razorpay vars
+        "razorpay_key_id": settings.RAZORPAY_KEY_ID,
+        "razorpay_order_id": razorpay_order_id,
+        "razorpay_amount": amount_paise,
+        "razorpay_currency": razorpay_currency,
+        "prefill_name": app_user.name,
+        "prefill_email": app_user.email,
+        "errors": errors,
+        "order": created_order,
+    }
+    return render(request, "cheackout.html", context)
+
+def payment_success(request):
+    """Handle Razorpay success callback (verifies signature, clears cart)."""
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return redirect("login")
+    payment_id = request.GET.get("payment_id")
+    razorpay_order_id = request.GET.get("order_id")
+    signature = request.GET.get("signature")
+    local_order_id = request.GET.get("local_order_id") or request.session.get("last_order_id")
+    verified = False
+    if payment_id and razorpay_order_id and signature:
+        try:
+            client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+            client.utility.verify_payment_signature({
+                "razorpay_payment_id": payment_id,
+                "razorpay_order_id": razorpay_order_id,
+                "razorpay_signature": signature,
+            })
+            verified = True
+        except Exception:
+            verified = False
+    if verified:
+        # Mark order paid
+        try:
+            order = Order.objects.get(id=int(local_order_id), user_id=user_id)
+            order.status = Order.STATUS_PAID
+            order.razorpay_payment_id = payment_id
+            order.razorpay_signature = signature
+            order.razorpay_order_id = razorpay_order_id
+            order.save()
+        except Exception:
+            pass
+        # Clear the user's cart on success
+        try:
+            app_user = AppUser.objects.get(id=user_id)
+            cart_obj = Cart.objects.filter(user=app_user).first()
+            if cart_obj:
+                cart_obj.items.all().delete()
+        except AppUser.DoesNotExist:
+            pass
+        messages.success(request, "Payment successful. Thank you for your order!")
+        return redirect("index")
+    messages.error(request, "Payment could not be verified. Please contact support.")
+    return redirect("cart")
  
  
     # if "user_id" in request.session:

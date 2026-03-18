@@ -38,6 +38,7 @@ urlpatterns = [
     # path("add-to-cart/<int:id>/", views.add_to_cart, name="add_to_cart"),
     # path("remove_from_cart/<int:item_id>/", views.remove_from_cart, name="remove_from_cart"),
     path("cheackout/",views.cheackout,name="cheackout"),
+    path("payment-success/", views.payment_success, name="payment_success"),
     path("error/",views.error,name="error"),
     path("contact/",views.contact,name="contact"),
     path("products/", views.product_list, name="products"),

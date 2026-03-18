@@ -133,3 +133,8 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = "vaghelaharshd84@gmail.com"   # replace with your Gmail
 EMAIL_HOST_PASSWORD = "cakeycganbywqjga" # NOT your Gmail password, use app password
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+# Vaghela: rzp_test_SDKXfatZrkuhZ4
+# Vaghela: 3cIzNVjjFzZPGQaGavbS4Fs3
+RAZORPAY_KEY_ID = "rzp_test_SDKXfatZrkuhZ4"
+RAZORPAY_KEY_SECRET = "3cIzNVjjFzZPGQaGavbS4Fs3"
