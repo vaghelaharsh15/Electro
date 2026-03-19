@@ -48,6 +48,8 @@ class Product(models.Model):
     date=models.DateField(null=True,blank=True,default=timezone.now)
     discription=models.TextField(null=True,blank=True)
     stock=models.IntegerField(default=20)
+    average_rating = models.DecimalField(max_digits=3, decimal_places=2, default=0)
+    rating_count = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return self.name
@@ -99,6 +101,21 @@ class CartItem(models.Model):
 
     def __str__(self):
         return f"{self.product.name} ({self.quantity})"
+
+
+class ProductReview(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="reviews")
+    user = models.ForeignKey(AppUser, on_delete=models.CASCADE, related_name="reviews")
+    rating = models.PositiveSmallIntegerField()
+    comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("product", "user")
+
+    def __str__(self):
+        return f"Review({self.product_id}, {self.user_id}, {self.rating})"
 
 
 class Wishlist(models.Model):

@@ -48,5 +48,6 @@ urlpatterns = [
     path("profile/", views.profile, name="profile"),
     path("forgot/",views.forgot,name="forgot"),
     path('apply_coupon/', views.apply_coupon, name='apply_coupon'),
-    path("message/",views.message,name="message")
+    path("message/",views.message,name="message"),
+    path("postreview/",views.postreview,name="postreview")
 ]

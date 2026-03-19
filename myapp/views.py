@@ -3,6 +3,7 @@ from django.http import JsonResponse
 from .models import *
 from django.db.models import Count
 from django.db.models import Q
+from django.db.models import Avg
 from decimal import Decimal, InvalidOperation
 from django.contrib.auth.hashers import make_password, check_password
 from django.db.models.functions import Random
@@ -247,9 +248,42 @@ def single(request):
     contacts=Contact.objects.first()
     colors = Color.objects.annotate(count=Count("product"))
 
+    # Save review
+    if request.method == "POST" and request.POST.get("review_submit") == "1":
+        user_id = request.session.get("user_id")
+        if not user_id:
+            return redirect("login")
+        try:
+            app_user = AppUser.objects.get(id=user_id)
+        except AppUser.DoesNotExist:
+            return redirect("login")
+
+        try:
+            rating = int(request.POST.get("rating", "0"))
+        except ValueError:
+            rating = 0
+        comment = (request.POST.get("comment") or "").strip()
+
+        if 1 <= rating <= 5:
+            ProductReview.objects.update_or_create(
+                product=product,
+                user=app_user,
+                defaults={"rating": rating, "comment": comment},
+            )
+            agg = product.reviews.aggregate(avg=Avg("rating"), cnt=Count("id"))
+            avg_rating = agg["avg"] or 0
+            cnt_rating = agg["cnt"] or 0
+            product.average_rating = avg_rating
+            product.rating_count = cnt_rating
+            product.save(update_fields=["average_rating", "rating_count"])
+        return redirect(f"{request.path}?product={product.id}")
+
     wishlist_ids, wishlist_count = _wishlist_ids_and_count(request)
     cart_ids, cart_count = _cart_ids_and_count(request)
     compare_ids, compare_count = _compare_ids_and_count(request)
+
+    reviews = product.reviews.select_related("user").order_by("-created_at")[:20]
+
     return render(request,"single.html",{
         "contacts": contacts,
         "categories": categories,
@@ -263,6 +297,7 @@ def single(request):
         "cart_ids":cart_ids,
         "compare_ids": compare_ids,
         "compare_count": compare_count,
+        "reviews": reviews,
         })
 
 def bestseller(request):
@@ -1087,4 +1122,54 @@ def message(request):
     else:
         return redirect("contact")
 
+def postreview(request):
+    if request.method == "POST":
 
+        # Get logged-in user from session
+        user_id = request.session.get("user_id")
+        if not user_id:
+            messages.error(request, "Please login first!")
+            return redirect("login")
+
+        user = get_object_or_404(AppUser, id=user_id)
+
+        # Get form data
+        product_id = request.POST.get("product_id")
+        rating = request.POST.get("rating")
+        comment = request.POST.get("comment")
+
+        # Validation
+        if not product_id or not rating:
+            messages.error(request, "Rating and product required!")
+            return redirect(request.META.get("HTTP_REFERER"))
+
+        product = get_object_or_404(Product, id=product_id)
+
+        try:
+            rating = int(rating)
+        except:
+            messages.error(request, "Invalid rating!")
+            return redirect(request.META.get("HTTP_REFERER"))
+            # Create or Update Review (because of unique_together)
+        review, created = ProductReview.objects.update_or_create(
+            product=product,
+            user=user,
+            defaults={
+                "rating": rating.value,
+                "comment": comment
+            }
+        )
+        avg = ProductReview.objects.filter(product=product).aggregate(avg=Avg("rating"))["avg"]
+        product.average_rating = avg or 0
+        product.save()
+
+        if created:
+            messages.success(request, "Review added successfully ⭐")
+        else:
+            messages.success(request, "Review updated successfully ✏️")
+
+        return redirect(request.META.get("HTTP_REFERER"))
+
+
+
+    return redirect("index")

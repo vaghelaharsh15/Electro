@@ -419,23 +419,24 @@
                                 </div>
                             </div>
                         </div>
-                        <form action="#">
+                        <form action="{%url "postreview"%}" method="POST">
+                            {% csrf_token %}
                             <h4 class="mb-5 fw-bold">Leave a Reply</h4>
                             <div class="row g-4">
                                 <div class="col-lg-6">
                                     <div class="border-bottom rounded">
-                                        <input type="text" class="form-control border-0 me-4" placeholder="Yur Name *">
+                                        <input type="text" class="form-control border-0 me-4" placeholder="Yur Name *" name="name">
                                     </div>
                                 </div>
                                 <div class="col-lg-6">
                                     <div class="border-bottom rounded">
-                                        <input type="email" class="form-control border-0" placeholder="Your Email *">
+                                        <input type="email" class="form-control border-0" placeholder="Your Email *" name="email">
                                     </div>
                                 </div>
                                 <div class="col-lg-12">
                                     <div class="border-bottom rounded my-4">
                                         <textarea name="" id="" class="form-control border-0" cols="30" rows="8"
-                                            placeholder="Your Review *" spellcheck="false"></textarea>
+                                            placeholder="Your Review *" spellcheck="false" name="review"></textarea>
                                     </div>
                                 </div>
                                 <div class="col-lg-12">
@@ -443,16 +444,26 @@
                                         <div class="d-flex align-items-center">
                                             <p class="mb-0 me-3">Please rate:</p>
                                             <div class="d-flex align-items-center" style="font-size: 12px;">
-                                                <i class="fa fa-star text-muted"></i>
+                                                <!-- Rating -->
+                                                <select name="rating" required>
+                                                    <option value="">Select Rating</option>
+                                                    <option value="1">⭐</option>
+                                                    <option value="2">⭐⭐</option>
+                                                    <option value="3">⭐⭐⭐</option>
+                                                    <option value="4">⭐⭐⭐⭐</option>
+                                                    <option value="5">⭐⭐⭐⭐⭐</option>
+                                                </select>
+
+                                                {% comment %} <i class="fa fa-star text-muted"></i>
                                                 <i class="fa fa-star"></i>
                                                 <i class="fa fa-star"></i>
                                                 <i class="fa fa-star"></i>
-                                                <i class="fa fa-star"></i>
+                                                <i class="fa fa-star"></i> {% endcomment %}
                                             </div>
                                         </div>
-                                        <a href="#"
+                                        <button type="submit"
                                             class="btn btn-primary border border-secondary text-primary rounded-pill px-4 py-3">
-                                            Post Comment</a>
+                                            Post Comment</button>
                                     </div>
                                 </div>
                             </div>
