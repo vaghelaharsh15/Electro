@@ -419,7 +419,7 @@
                                 </div>
                             </div>
                         </div>
-                        <form action="{%url "postreview"%}" method="POST">
+                        <form action="{%url "postreview" product.id%}" method="POST">
                             {% csrf_token %}
                             <h4 class="mb-5 fw-bold">Leave a Reply</h4>
                             <div class="row g-4">

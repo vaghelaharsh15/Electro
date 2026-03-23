@@ -242,6 +242,10 @@ def single(request):
     id = request.GET.get("product")
     product = Product.objects.order_by('-date').first()
     if id:
+        request.session["last_viewed_products"]=id
+    else:
+        id=request.session.get("last_viewed_products")
+    if id:
         product = get_object_or_404(Product, id=id)
     related_products = Product.objects.filter(category=product.category)
     categories = Category.objects.annotate(count=Count("product"))
@@ -1122,7 +1126,7 @@ def message(request):
     else:
         return redirect("contact")
 
-def postreview(request):
+def postreview(request,product_id):
     if request.method == "POST":
 
         # Get logged-in user from session
