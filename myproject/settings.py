@@ -138,3 +138,10 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 # Vaghela: 3cIzNVjjFzZPGQaGavbS4Fs3
 RAZORPAY_KEY_ID = "rzp_test_SPqyEGxLhoQUyk"
 RAZORPAY_KEY_SECRET = "exO12cb8rCYgUM9f14XY1cEz"
+
+# settings.py
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    }
+}
