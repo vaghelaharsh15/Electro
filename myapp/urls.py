@@ -32,7 +32,7 @@ urlpatterns = [
     path("remove_from_cart/", views.remove_from_cart, name="remove_from_cart"),
     path("remove_from_cart/<int:item_id>/", views.remove_from_cart, name="remove_from_cart"),
     path("wishlist/", views.wishlist, name="wishlist"),
-    path("toggle_wishlist/<int:product_id>/", views.toggle_wishlist, name="toggle_wishlist"),
+    # path("toggle_wishlist/<int:product_id>/", views.toggle_wishlist, name="toggle_wishlist"),
     path("compare/", views.compare, name="compare"),
     path("toggle_compare/<int:product_id>/", views.toggle_compare, name="toggle_compare"),
     # path("add-to-cart/<int:id>/", views.add_to_cart, name="add_to_cart"),
@@ -49,5 +49,7 @@ urlpatterns = [
     path("forgot/",views.forgot,name="forgot"),
     path('apply_coupon/', views.apply_coupon, name='apply_coupon'),
     path("message/",views.message,name="message"),
-    path("postreview/<int:product_id>/",views.postreview,name="postreview")
+    path("postreview/<int:product_id>/",views.postreview,name="postreview"),
+    path("add_to_cart/", views.add_to_cart, name="add_to_cart"),
+    path("add_to_wishlist/", views.add_to_wishlist, name="add_to_wishlist"),
 ]

@@ -16,7 +16,7 @@
         {% if wishlist_items %}
         <div class="row g-4">
             {% for item in wishlist_items %}
-            <div class="col-md-6 col-lg-4 col-xl-3">
+            <div class="col-md-6 col-lg-4 col-xl-3" data-wishlist-item>
                 <div class="product-item rounded">
                     <div class="product-item-inner border rounded">
                         <div class="product-item-inner-item">
@@ -37,8 +37,10 @@
                             <i class="fas fa-shopping-cart me-2"></i> Add To Cart
                         </a>
                         <div class="d-flex justify-content-between align-items-center">
-                            <a href="{% url 'toggle_wishlist' item.product.id %}"
-                               class="text-primary d-flex align-items-center justify-content-center me-3">
+                            <a href="#"
+                               class="text-primary d-flex align-items-center justify-content-center me-3 wishlist-btn"
+                               data-product-id="{{ item.product.id }}"
+                               data-remove-on-unwish="true">
                                 <span class="rounded-circle btn-sm-square border">
                                     <i class="fas fa-heart text-danger"></i>
                                 </span>

@@ -331,30 +331,69 @@ def bestseller(request):
         "compare_count": compare_count,
     })
 
-def toggle_wishlist(request, product_id):
-    """Add/remove a product from the logged-in AppUser's wishlist."""
-    user_id = request.session.get("user_id")
-    if not user_id:
-        return redirect("login")
-    try:
-        app_user = AppUser.objects.get(id=user_id)
-    except AppUser.DoesNotExist:
-        request.session.pop("user_id", None)
-        request.session.pop("user_name", None)
-        return redirect("login")
+# def toggle_wishlist(request, product_id):
+#     """Add/remove a product from the logged-in AppUser's wishlist."""
+#     user_id = request.session.get("user_id")
+#     if not user_id:
+#         return redirect("login")
+#     try:
+#         app_user = AppUser.objects.get(id=user_id)
+#     except AppUser.DoesNotExist:
+#         request.session.pop("user_id", None)
+#         request.session.pop("user_name", None)
+#         return redirect("login")
 
-    product = get_object_or_404(Product, id=product_id)
-    wishlist, _ = Wishlist.objects.get_or_create(user=app_user)
-    existing = WishlistItem.objects.filter(wishlist=wishlist, product=product)
-    if existing.exists():
-        existing.delete()
-    else:
-        WishlistItem.objects.create(wishlist=wishlist, product=product)
+#     product = get_object_or_404(Product, id=product_id)
+#     wishlist, _ = Wishlist.objects.get_or_create(user=app_user)
+#     existing = WishlistItem.objects.filter(wishlist=wishlist, product=product)
+#     if existing.exists():
+#         existing.delete()
+#     else:
+#         WishlistItem.objects.create(wishlist=wishlist, product=product)
 
-    # Go back where we came from, or to wishlist page
-    return redirect(request.META.get("HTTP_REFERER") or "wishlist")
+#     # Go back where we came from, or to wishlist page
+#     return redirect(request.META.get("HTTP_REFERER") or "wishlist")
 
+def add_to_wishlist(request):
 
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            product_id = data.get("product_id")
+        except:
+            return JsonResponse({"status": "error"})
+
+        user_id = request.session.get("user_id")
+
+        if not user_id:
+            return JsonResponse({"status": "login_required"})
+
+        try:
+            app_user = AppUser.objects.get(id=user_id)
+            product = Product.objects.get(id=product_id)
+        except:
+            return JsonResponse({"status": "error"})
+
+        wishlist, _ = Wishlist.objects.get_or_create(user=app_user)
+
+        item = WishlistItem.objects.filter(
+            wishlist=wishlist,
+            product=product
+        ).first()
+
+        if item:
+            item.delete()
+            wishlist_count = WishlistItem.objects.filter(wishlist=wishlist).count()
+            return JsonResponse({"status": "removed", "wishlist_count": wishlist_count})
+        else:
+            WishlistItem.objects.create(
+                wishlist=wishlist,
+                product=product
+            )
+            wishlist_count = WishlistItem.objects.filter(wishlist=wishlist).count()
+            return JsonResponse({"status": "added", "wishlist_count": wishlist_count})
+
+    return JsonResponse({"status": "invalid_request"})
 def wishlist(request):
     """Show all wishlisted items for the logged-in AppUser."""
     user_id = request.session.get("user_id")
@@ -498,56 +537,127 @@ def _get_cart(request):
     #     })
     # request.session.modified = True
     # return redirect('cart')
+
+import json
+from django.http import JsonResponse
+
 def add_to_cart(request, product_id=None):
-    """
-    Add a product to the logged-in AppUser's cart (DB-backed).
-    Supports:
-    - GET /add_to_cart/<product_id>/ (links)
-    - POST /add_to_cart/ with product_id in form
-    """
-    user_id = request.session.get("user_id")
-    if not user_id:
-        return redirect("login")
 
-    try:
-        app_user = AppUser.objects.get(id=user_id)
-    except AppUser.DoesNotExist:
-        request.session.pop("user_id", None)
-        request.session.pop("user_name", None)
-        return redirect("login")
-
-    pid = product_id
-    if pid is None:
-        pid = request.POST.get("product_id") or request.GET.get("product_id") or request.GET.get("product")
-    try:
-        pid_int = int(pid)
-    except (TypeError, ValueError):
-        return redirect("cart")
-
-    product = get_object_or_404(Product, id=pid_int)
-
-    # Quantity (POST supported; links default to 1)
-    quantity = 1
+    # ✅ AJAX REQUEST
     if request.method == "POST":
         try:
-            quantity = int(request.POST.get("quantity", 1))
-        except ValueError:
-            quantity = 1
-        if quantity < 1:
-            quantity = 1
+            data = json.loads(request.body)
+            product_id = data.get("product_id")
+        except:
+            return JsonResponse({"status": "error"})
 
-    cart, _ = Cart.objects.get_or_create(user=app_user)
-    item, created = CartItem.objects.get_or_create(
-        cart=cart,
-        product=product,
-        defaults={"quantity": quantity, "price": product.price},
-    )
-    if not created:
-        item.quantity = item.quantity + quantity
-        item.price = product.price
-        item.save()
+        user_id = request.session.get("user_id")
+        if not user_id:
+            return JsonResponse({"status": "login_required"})
+
+        try:
+            app_user = AppUser.objects.get(id=user_id)
+            product = Product.objects.get(id=product_id)
+        except:
+            return JsonResponse({"status": "error"})
+
+        cart, _ = Cart.objects.get_or_create(user=app_user)
+
+        item, created = CartItem.objects.get_or_create(
+            cart=cart,
+            product=product,
+            defaults={"quantity": 1, "price": product.price}
+        )
+
+        if not created:
+            item.quantity += 1
+            item.save()
+
+        product_name = getattr(product, "product_name", "") or getattr(product, "name", "")
+        return JsonResponse({
+            "status": "added",
+            "cart_count": cart.items.count(),
+            "product": {
+                "name": product_name,
+                "price": str(product.price),
+                "image": product.product_image.url if getattr(product, "product_image", None) else "",
+                "quantity": item.quantity,
+            }
+        })
+
+    # ✅ NORMAL (OLD BEHAVIOR)
+    if product_id:
+        user_id = request.session.get("user_id")
+        if not user_id:
+            return redirect("login")
+
+        app_user = AppUser.objects.get(id=user_id)
+        product = get_object_or_404(Product, id=product_id)
+
+        cart, _ = Cart.objects.get_or_create(user=app_user)
+
+        item, created = CartItem.objects.get_or_create(
+            cart=cart,
+            product=product,
+            defaults={"quantity": 1, "price": product.price}
+        )
+
+        if not created:
+            item.quantity += 1
+            item.save()
 
     return redirect("cart")
+
+# def add_to_cart(request, product_id=None):
+#     """
+#     Add a product to the logged-in AppUser's cart (DB-backed).
+#     Supports:
+#     - GET /add_to_cart/<product_id>/ (links)
+#     - POST /add_to_cart/ with product_id in form
+#     """
+#     user_id = request.session.get("user_id")
+#     if not user_id:
+#         return redirect("login")
+
+#     try:
+#         app_user = AppUser.objects.get(id=user_id)
+#     except AppUser.DoesNotExist:
+#         request.session.pop("user_id", None)
+#         request.session.pop("user_name", None)
+#         return redirect("login")
+
+#     pid = product_id
+#     if pid is None:
+#         pid = request.POST.get("product_id") or request.GET.get("product_id") or request.GET.get("product")
+#     try:
+#         pid_int = int(pid)
+#     except (TypeError, ValueError):
+#         return redirect("cart")
+
+#     product = get_object_or_404(Product, id=pid_int)
+
+#     # Quantity (POST supported; links default to 1)
+#     quantity = 1
+#     if request.method == "POST":
+#         try:
+#             quantity = int(request.POST.get("quantity", 1))
+#         except ValueError:
+#             quantity = 1
+#         if quantity < 1:
+#             quantity = 1
+
+#     cart, _ = Cart.objects.get_or_create(user=app_user)
+#     item, created = CartItem.objects.get_or_create(
+#         cart=cart,
+#         product=product,
+#         defaults={"quantity": quantity, "price": product.price},
+#     )
+#     if not created:
+#         item.quantity = item.quantity + quantity
+#         item.price = product.price
+#         item.save()
+
+#     return redirect("cart")
 
 
 def update_cart(request, item_id, action):

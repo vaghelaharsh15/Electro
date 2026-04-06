@@ -179,17 +179,22 @@
                     </a>
                     <a href="{% url 'wishlist' %}" class="text-muted d-flex align-items-center justify-content-center me-3">
                         <span class="rounded-circle btn-md-square border position-relative">
-                            <i class="fas fa-heart {% if wishlist_count %}text-danger{% endif %}"></i>
+                            <i id="wishlist-nav-heart" class="fas fa-heart {% if wishlist_count %}text-danger{% endif %}"></i>
                             {% if wishlist_count %}
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            <span id="wishlist-nav-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                                 {{ wishlist_count }}
                             </span>
                             {% endif %}
                         </span>
                     </a>
                     <a href="{% url 'cart' %}" class="text-muted d-flex align-items-center justify-content-center me-3">
-                        <span class="rounded-circle btn-md-square border">
-                            <i class="fas fa-shopping-cart " ></i>
+                        <span class="rounded-circle btn-md-square border position-relative">
+                            <i id="cart-nav-icon" class="fas fa-shopping-cart"></i>
+                            {% if cart_count %}
+                            <span id="cart-nav-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary">
+                                {{ cart_count }}
+                            </span>
+                            {% endif %}
                         </span>
                     </a>
                     <div class="dropdown">
@@ -526,7 +531,12 @@
                                         </div>
                                     </div>
                                     <div class="product-item-add border border-top-0 rounded-bottom text-center p-4 pt-0">
-                                        <a href="{% url 'add_to_cart' i.id %}" class="btn btn-primary border-secondary rounded-pill py-2 px-4 mb-4 add_to_cart-btn"><i class="fas fa-shopping-cart me-2"></i> Add To Cart</a>
+                                        {% comment %} <a href="{% url 'add_to_cart' i.id %}" class="btn btn-primary border-secondary rounded-pill py-2 px-4 mb-4 add_to_cart-btn"><i class="fas fa-shopping-cart me-2"></i> Add To Cart</a> {% endcomment %}
+                                        <a href="#" 
+   class="btn btn-primary add-to-cart-btn"
+   data-product-id="{{ i.id }}">
+   <i class="fas fa-shopping-cart me-2"></i> Add To Cart
+</a>
                                         <div class="d-flex justify-content-between align-items-center">
                                             <div class="d-flex">
                                                 <i class="fas fa-star text-primary"></i>
@@ -541,11 +551,18 @@
                                                         <i class="fas fa-random {% if i.id in compare_ids %}text-primary{% else %}text-muted{% endif %}"></i>
                                                     </span>
                                                 </a>
-                                                <a href="{% url 'toggle_wishlist' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-0">
+                                                {% comment %} <a href="{% url 'toggle_wishlist' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-0">
                                                     <span class="rounded-circle btn-sm-square border">
                                                         <i class="fas fa-heart {% if i.id in wishlist_ids %}text-danger{% else %}text-muted{% endif %}"></i>
                                                     </span>
-                                                </a>
+                                                </a> {% endcomment %}
+                                                <a href="#" 
+   class="text-primary wishlist-btn"
+   data-product-id="{{ i.id }}">
+    <span class="rounded-circle btn-sm-square border">
+        <i class="fas fa-heart {% if i.id in wishlist_ids %}text-danger{% else %}text-muted{% endif %}"></i>
+    </span>
+</a>
                                             </div>
                                         </div>
                                     </div>
@@ -630,11 +647,18 @@
                                                     </span>
                                                 </a>
                                                 {% comment %} <a href="#" class="text-primary d-flex align-items-center justify-content-center me-3"><span class="rounded-circle btn-sm-square border"><i class="fas fa-random"></i></span></a> {% endcomment %}
-                                                <a href="{% url 'toggle_wishlist' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-0">
+                                                {% comment %} <a href="{% url 'toggle_wishlist' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-0">
                                                     <span class="rounded-circle btn-sm-square border">
                                                         <i class="fas fa-heart {% if i.id in wishlist_ids %}text-danger{% else %}text-muted{% endif %}"></i>
                                                     </span>
-                                                </a>
+                                                </a> {% endcomment %}
+                                                <a href="#" 
+   class="text-primary wishlist-btn"
+   data-product-id="{{ i.id }}">
+    <span class="rounded-circle btn-sm-square border">
+        <i class="fas fa-heart {% if i.id in wishlist_ids %}text-danger{% else %}text-muted{% endif %}"></i>
+    </span>
+</a>
                                             </div>
                                         </div>
                                     </div>
@@ -663,7 +687,12 @@
                                         </div>
                                     </div>
                                     <div class="product-item-add border border-top-0 rounded-bottom text-center p-4 pt-0">
-                                        <a href="{% url 'add_to_cart' i.id %}" class="btn btn-primary border-secondary rounded-pill py-2 px-4 mb-4 add_to_cart-btn"><i class="fas fa-shopping-cart me-2"></i> Add To Cart</a>
+                                        {% comment %} <a href="{% url 'add_to_cart' i.id %}" class="btn btn-primary border-secondary rounded-pill py-2 px-4 mb-4 add_to_cart-btn"><i class="fas fa-shopping-cart me-2"></i> Add To Cart</a> {% endcomment %}
+                                        <a href="#" 
+   class="btn btn-primary add-to-cart-btn"
+   data-product-id="{{ i.id }}">
+   <i class="fas fa-shopping-cart me-2"></i> Add To Cart
+</a>
                                         <div class="d-flex justify-content-between align-items-center">
                                             <div class="d-flex">
                                                 <i class="fas fa-star text-primary"></i>
@@ -679,11 +708,18 @@
                                                     </span>
                                                 </a>
                                                 {% comment %} <a href="#" class="text-primary d-flex align-items-center justify-content-center me-3"><span class="rounded-circle btn-sm-square border"><i class="fas fa-random"></i></span></a> {% endcomment %}
-                                                <a href="{% url 'toggle_wishlist' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-0">
+                                                {% comment %} <a href="{% url 'toggle_wishlist' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-0">
                                                     <span class="rounded-circle btn-sm-square border">
                                                         <i class="fas fa-heart {% if i.id in wishlist_ids %}text-danger{% else %}text-muted{% endif %}"></i>
                                                     </span>
-                                                </a>
+                                                </a> {% endcomment %}
+                                                <a href="#" 
+   class="text-primary wishlist-btn"
+   data-product-id="{{ i.id }}">
+    <span class="rounded-circle btn-sm-square border">
+        <i class="fas fa-heart {% if i.id in wishlist_ids %}text-danger{% else %}text-muted{% endif %}"></i>
+    </span>
+</a>
                                             </div>
                                         </div>
                                     </div>
@@ -713,7 +749,12 @@
                                         </div>
                                     </div>
                                     <div class="product-item-add border border-top-0 rounded-bottom text-center p-4 pt-0">
-                                        <a href="{% url 'add_to_cart' i.id %}" class="btn btn-primary border-secondary rounded-pill py-2 px-4 mb-4 add_to_cart-btn"><i class="fas fa-shopping-cart me-2"></i> Add To Cart</a>
+                                        {% comment %} <a href="{% url 'add_to_cart' i.id %}" class="btn btn-primary border-secondary rounded-pill py-2 px-4 mb-4 add_to_cart-btn"><i class="fas fa-shopping-cart me-2"></i> Add To Cart</a> {% endcomment %}
+                                        <a href="#" 
+   class="btn btn-primary add-to-cart-btn"
+   data-product-id="{{ i.id }}">
+   <i class="fas fa-shopping-cart me-2"></i> Add To Cart
+</a>
                                         <div class="d-flex justify-content-between align-items-center">
                                             <div class="d-flex">
                                                 <i class="fas fa-star text-primary"></i>
@@ -729,11 +770,18 @@
                                                     </span>
                                                 </a>
                                                 {% comment %} <a href="#" class="text-primary d-flex align-items-center justify-content-center me-3"><span class="rounded-circle btn-sm-square border"><i class="fas fa-random"></i></span></a> {% endcomment %}
-                                                <a href="{% url 'toggle_wishlist' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-0">
+                                                {% comment %} <a href="{% url 'toggle_wishlist' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-0">
                                                     <span class="rounded-circle btn-sm-square border">
                                                         <i class="fas fa-heart {% if i.id in wishlist_ids %}text-danger{% else %}text-muted{% endif %}"></i>
                                                     </span>
-                                                </a>
+                                                </a> {% endcomment %}
+                                                <a href="#" 
+   class="text-primary wishlist-btn"
+   data-product-id="{{ i.id }}">
+    <span class="rounded-circle btn-sm-square border">
+        <i class="fas fa-heart {% if i.id in wishlist_ids %}text-danger{% else %}text-muted{% endif %}"></i>
+    </span>
+</a>
                                             </div>
                                         </div>
                                     </div>
@@ -815,9 +863,14 @@
                             </div>
                         </div>
                         <div class="products-mini-add border p-3">
-                            <a href="{% url 'add_to_cart' i.id %}" class="btn btn-primary border-secondary rounded-pill py-2 px-4 add_to_cart-btn"><i
-                                    class="fas fa-shopping-cart me-2"></i> Add To Cart</a>
-                            <div class="d-flex">
+                            {% comment %} <a href="{% url 'add_to_cart' i.id %}" class="btn btn-primary border-secondary rounded-pill py-2 px-4 add_to_cart-btn"><i
+                                    class="fas fa-shopping-cart me-2"></i> Add To Cart</a> {% endcomment %}
+                                    <a href="#" 
+                                    class="btn btn-primary add-to-cart-btn"
+                                    data-product-id="{{ i.id }}">
+                                    <i class="fas fa-shopping-cart me-2"></i> Add To Cart
+                                 </a>
+                                    <div class="d-flex">
                                 <a href="{% url 'toggle_compare' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-3">
                                     <span class="rounded-circle btn-sm-square border">
                                         <i class="fas fa-random {% if i.id in compare_ids %}text-primary{% else %}text-muted{% endif %}"></i>
@@ -827,9 +880,16 @@
                                     class="text-primary d-flex align-items-center justify-content-center me-3"><span
                                         class="rounded-circle btn-sm-square border"><i
                                             class="fas fa-random"></i></i></a> {% endcomment %}
-                                <a href="{% url 'toggle_wishlist' i.id %}"
+                                {% comment %} <a href="{% url 'toggle_wishlist' i.id %}"
                                 class="text-primary d-flex align-items-center justify-content-center me-0"><span
-                                    class="rounded-circle btn-sm-square border"><i class="fas fa-heart {% if i.id in wishlist_ids %}text-danger{% else %}text-muted{% endif %}"></i></span></a>
+                                    class="rounded-circle btn-sm-square border"><i class="fas fa-heart {% if i.id in wishlist_ids %}text-danger{% else %}text-muted{% endif %}"></i></span></a> {% endcomment %}
+                                    <a href="#" 
+   class="text-primary wishlist-btn"
+   data-product-id="{{ i.id }}">
+    <span class="rounded-circle btn-sm-square border">
+        <i class="fas fa-heart {% if i.id in wishlist_ids %}text-danger{% else %}text-muted{% endif %}"></i>
+    </span>
+</a>
                             </div>
                         </div>
                     </div>
@@ -873,7 +933,12 @@
                             </div>
                         </div>
                         <div class="products-mini-add border p-3">
-                            <a href="{% url 'add_to_cart' i.id %}" class="btn btn-primary border-secondary rounded-pill py-2 px_4 _-btn"><i class="fas fa-shopping-cart me-2"></i> Add To Cart</a>
+                            {% comment %} <a href="{% url 'add_to_cart' i.id %}" class="btn btn-primary border-secondary rounded-pill py-2 px_4 _-btn"><i class="fas fa-shopping-cart me-2"></i> Add To Cart</a> {% endcomment %}
+                            <a href="#" 
+                            class="btn btn-primary add-to-cart-btn"
+                            data-product-id="{{ i.id }}">
+                            <i class="fas fa-shopping-cart me-2"></i> Add To Cart
+                         </a>
                             <div class="d-flex">
                                 <a href="{% url 'toggle_compare' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-3">
                                     <span class="rounded-circle btn-sm-square border">
@@ -881,11 +946,18 @@
                                     </span>
                                 </a>
                                 {% comment %} <a href="#" class="text-primary d-flex align-items-center justify-content-center me-3"><span class="rounded-circle btn-sm-square border"><i class="fas fa-random"></i></span></a> {% endcomment %}
-                                <a href="{% url 'toggle_wishlist' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-0">
+                                {% comment %} <a href="{% url 'toggle_wishlist' i.id %}" class="text-primary d-flex align-items-center justify-content-center me-0">
                                     <span class="rounded-circle btn-sm-square border">
                                         <i class="fas fa-heart {% if i.id in wishlist_ids %}text-danger{% else %}text-muted{% endif %}"></i>
                                     </span>
-                                </a>
+                                </a> {% endcomment %}
+                                <a href="#" 
+   class="text-primary wishlist-btn"
+   data-product-id="{{ i.id }}">
+    <span class="rounded-circle btn-sm-square border">
+        <i class="fas fa-heart {% if i.id in wishlist_ids %}text-danger{% else %}text-muted{% endif %}"></i>
+    </span>
+</a>
                             </div>
                         </div>
                     </div>
@@ -1043,6 +1115,216 @@
 
     <!-- Template Javascript -->
     <script src="{% static "js/main.js" %}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            function updateCartBadge(count) {
+                const parsedCount = Number(count) || 0;
+                const cartIcon = document.getElementById("cart-nav-icon");
+                let badge = document.getElementById("cart-nav-badge");
+
+                if (parsedCount > 0) {
+                    if (!badge) {
+                        const wrapper = cartIcon ? cartIcon.parentElement : null;
+                        if (wrapper) {
+                            badge = document.createElement("span");
+                            badge.id = "cart-nav-badge";
+                            badge.className = "position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary";
+                            wrapper.appendChild(badge);
+                        }
+                    }
+                    if (badge) {
+                        badge.textContent = parsedCount;
+                    }
+                } else if (badge) {
+                    badge.remove();
+                }
+            }
+
+            function showCartPopup(product) {
+                const existing = document.getElementById("cart-added-popup");
+                if (existing) {
+                    existing.remove();
+                }
+
+                const name = product?.name || "Product";
+                const price = product?.price || "";
+                const qty = product?.quantity || 1;
+                const image = product?.image || "";
+
+                const popup = document.createElement("div");
+                popup.id = "cart-added-popup";
+                popup.style.position = "fixed";
+                popup.style.top = "20px";
+                popup.style.right = "20px";
+                popup.style.zIndex = "9999";
+                popup.style.width = "320px";
+                popup.style.background = "#fff";
+                popup.style.border = "1px solid #dee2e6";
+                popup.style.borderRadius = "10px";
+                popup.style.boxShadow = "0 8px 24px rgba(0,0,0,0.15)";
+                popup.style.padding = "12px";
+                popup.style.transition = "opacity 0.25s ease";
+                popup.style.opacity = "1";
+                popup.innerHTML = `
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        ${image ? `<img src="${image}" alt="${name}" style="width:56px;height:56px;object-fit:cover;border-radius:8px;">` : ""}
+                        <div style="flex:1;">
+                            <div style="font-weight:600; font-size:14px;">Added to cart</div>
+                            <div style="font-size:13px; color:#212529;">${name}</div>
+                            <div style="font-size:12px; color:#6c757d;">Price: ₹ ${price} | Qty: ${qty}</div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(popup);
+
+                setTimeout(() => {
+                    popup.style.opacity = "0";
+                    setTimeout(() => popup.remove(), 250);
+                }, 2200);
+            }
+
+            // ADD TO CART
+            document.querySelectorAll(".add-to-cart-btn, .add_to_cart-btn").forEach(button => {
+                button.addEventListener("click", function (e) {
+                    e.preventDefault();
+        
+                    let productId = this.dataset.productId;
+                    if (!productId) {
+                        const href = this.getAttribute("href") || "";
+                        const match = href.match(/\/add_to_cart\/(\d+)/);
+                        if (match) {
+                            productId = match[1];
+                        }
+                    }
+                    if (!productId) {
+                        return;
+                    }
+        
+                    fetch("/add_to_cart/", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": getCookie("csrftoken")
+                        },
+                        body: JSON.stringify({
+                            product_id: productId
+                        })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+        
+                        if (data.status === "login_required") {
+                            window.location.href = "/login";
+                        }
+        
+                        if (data.status === "added") {
+                            updateCartBadge(data.cart_count);
+                            showCartPopup(data.product);
+                        }
+        
+                    });
+                });
+            });
+        
+            // WISHLIST
+            document.querySelectorAll(".wishlist-btn").forEach(button => {
+                button.addEventListener("click", function (event) {
+                    event.preventDefault();
+        
+                    let productId = this.dataset.productId;
+                    const heartIcon = this.querySelector(".fa-heart");
+                    const navHeart = document.getElementById("wishlist-nav-heart");
+        
+                    fetch("/add_to_wishlist/", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": getCookie("csrftoken")
+                        },
+                        body: JSON.stringify({
+                            product_id: productId
+                        })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        const updateWishlistBadge = (count) => {
+                            const parsedCount = Number(count) || 0;
+                            let badge = document.getElementById("wishlist-nav-badge");
+
+                            if (parsedCount > 0) {
+                                if (!badge) {
+                                    const wrapper = navHeart ? navHeart.parentElement : null;
+                                    if (wrapper) {
+                                        badge = document.createElement("span");
+                                        badge.id = "wishlist-nav-badge";
+                                        badge.className = "position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger";
+                                        wrapper.appendChild(badge);
+                                    }
+                                }
+                                if (badge) {
+                                    badge.textContent = parsedCount;
+                                }
+                                if (navHeart) {
+                                    navHeart.classList.add("text-danger");
+                                }
+                            } else {
+                                if (badge) {
+                                    badge.remove();
+                                }
+                                if (navHeart) {
+                                    navHeart.classList.remove("text-danger");
+                                }
+                            }
+                        };
+        
+                        if (data.status === "login_required") {
+                            window.location.href = "/login";
+                        }
+        
+                        if (data.status === "added") {
+                            if (heartIcon) {
+                                heartIcon.classList.add("text-danger");
+                                heartIcon.classList.remove("text-muted");
+                            }
+                            updateWishlistBadge(data.wishlist_count);
+                        }
+        
+                        if (data.status === "removed") {
+                            if (heartIcon) {
+                                heartIcon.classList.remove("text-danger");
+                                heartIcon.classList.add("text-muted");
+                            }
+
+                            if (this.dataset.removeOnUnwish === "true") {
+                                const wishlistItem = this.closest("[data-wishlist-item]");
+                                if (wishlistItem) {
+                                    wishlistItem.remove();
+                                }
+                            }
+                            updateWishlistBadge(data.wishlist_count);
+                        }
+        
+                    });
+                });
+            });
+        
+        });
+        
+        // CSRF
+        function getCookie(name) {
+            let cookieValue = null;
+            let cookies = document.cookie.split(";");
+        
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.startsWith(name + "=")) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                }
+            }
+            return cookieValue;
+        }
+        </script>
 </body>
 
 </html>
