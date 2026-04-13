@@ -16,13 +16,7 @@ from django.contrib.auth.models import User
 from decimal import Decimal
 from django.contrib import messages
 import razorpay
-from django.views.decorators.cache import cache_page
 global discount
-
-@cache_page(60 * 5)
-
-
-
 
 def _parse_decimal(value: str | None):
     if value is None:
